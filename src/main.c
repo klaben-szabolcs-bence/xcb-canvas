@@ -3,8 +3,7 @@
 
 #include <xcb/xcb.h>
 
-void
-print_modifiers (uint32_t mask)
+void print_modifiers (uint32_t mask)
 {
   const char **mod, *mods[] = {
     "Shift", "Lock", "Ctrl", "Alt",
@@ -18,8 +17,7 @@ print_modifiers (uint32_t mask)
   putchar ('\n');
 }
 
-int
-main ()
+int main ()
 {
   xcb_connection_t    *c;
   xcb_screen_t        *screen;
