@@ -14,7 +14,7 @@ void print_modifiers (uint32_t mask)
   putchar ('\n');
 }
 
-int init_xcb ()
+int init_xcb (RenderingContext* rendering_context)
 {
   xcb_connection_t    *c;
   xcb_screen_t        *screen;
@@ -56,10 +56,10 @@ int init_xcb ()
 
   handle_events (c);
 
-  rendering_context.width = 800;
-  rendering_context.height = 600;
-  rendering_context.win = win;
-  rendering_context.c = c;
+  rendering_context->width = 800;
+  rendering_context->height = 600;
+  rendering_context->win = win;
+  rendering_context->c = c;
 
   return 0;
 }
@@ -92,6 +92,7 @@ void handle_events (xcb_connection_t *c)
       default:
         /* printf ("Button %d pressed in window %u, at coordinates (%d,%d)\n",
                 ev->detail, ev->event, ev->event_x, ev->event_y); */
+        break;
       }
       break;
     }

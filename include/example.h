@@ -3,6 +3,8 @@
 
 #include "canvas.h"
 
+RenderingContext rendering_context;
+
 /* Main entry point to the program */
 int main ();
 
