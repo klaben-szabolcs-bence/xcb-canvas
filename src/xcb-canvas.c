@@ -14,7 +14,7 @@ void print_modifiers (uint32_t mask)
   putchar ('\n');
 }
 
-int init_xcb (RenderingContext* rendering_context)
+int init_xcb (canvas_rendering_context_t* rendering_context)
 {
   xcb_connection_t    *c;
   xcb_screen_t        *screen;
@@ -151,7 +151,7 @@ void handle_events (xcb_connection_t *c)
   }
 }
 
-void set_window_size(RenderingContext* rendering_context, int new_width, int new_height)
+void set_window_size(canvas_rendering_context_t* rendering_context, int new_width, int new_height)
 {
     static uint32_t values[2];
     values[0] = new_width;
