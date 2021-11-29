@@ -27,9 +27,13 @@ void xcbcanvas_print_modifiers (uint32_t mask);
 /* Program entry-point, when executed */
 int xcbcanvas_init_xcb (canvas_rendering_context_t* rendering_context);
 
-/* Get/Set the RenderingContext's properties */
-void xcbvanvas_set_window_size (canvas_rendering_context_t* rendering_context, int new_width, int new_height);
+/* Set size of the window */
+void xcbcanvas_set_window_size (canvas_rendering_context_t* rendering_context, int new_width, int new_height);
+
+/* Get size of window */
 canvas_size_t xcbcanvas_get_windows_size(canvas_rendering_context_t* rendering_context);
+
+/* Set the draw function */
 void xcbcanvas_set_draw_function (canvas_rendering_context_t* rendering_context, void* draw_function);
 
 /* Handle the event loop of the main program */
