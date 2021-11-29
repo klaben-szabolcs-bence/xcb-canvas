@@ -56,8 +56,6 @@ int init_xcb (canvas_rendering_context_t* rendering_context)
 
   handle_events (c);
 
-  rendering_context->width = 800;
-  rendering_context->height = 600;
   rendering_context->win = win;
   rendering_context->c = c;
 
@@ -158,6 +156,15 @@ void set_window_size(canvas_rendering_context_t* rendering_context, int new_widt
     values[1] = new_height;
     xcb_configure_window ( rendering_context->c, rendering_context->win,
             XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
-    rendering_context->width = new_width;
-    rendering_context->height = new_height;
+}
+
+canvas_size_t get_windows_size(canvas_rendering_context_t* rendering_context)
+{
+    xcb_get_geometry_cookie_t cookie = xcb_get_geometry(rendering_context->c, rendering_context->win);
+    xcb_get_geometry_reply_t *reply = xcb_get_geometry_reply(rendering_context->c, cookie, NULL);
+    canvas_size_t size;
+    size.width = reply->width;
+    size.height = reply->height;
+    free(reply);
+    return size;
 }
