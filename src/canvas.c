@@ -1,8 +1,9 @@
 #include "canvas.h"
 
-void canvas_init(canvas_rendering_context_t* rendering_context)
+int canvas_init(canvas_rendering_context_t* rendering_context)
 {
-    xcbcanvas_init_xcb(rendering_context);
+    if (!xcbcanvas_init_xcb(rendering_context))
+        return -1;
 }
 
 void canvas_stroke_rectangle(
