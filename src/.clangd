@@ -1,2 +1,0 @@
-CompileFlags:       # Tweak the parse settings
-  Add: [-xc, -Wall, -std=c18] # Treat all files as C and not C++
