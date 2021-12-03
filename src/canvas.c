@@ -4,6 +4,8 @@ int canvas_init(canvas_rendering_context_t* rendering_context)
 {
     if (!xcbcanvas_init_xcb(rendering_context))
         return -1;
+
+    return 0;
 }
 
 void canvas_stroke_rectangle(
