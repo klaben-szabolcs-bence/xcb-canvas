@@ -7,10 +7,10 @@
 
 #include <xcb/xcb.h>
 
-typedef struct canvas_size_t {
+typedef struct xcbcanvas_size_t {
     int width;
     int height;
-} canvas_size_t;
+} xcbcanvas_size_t;
 
 typedef struct canvas_rendering_context_t {
     xcb_connection_t* c;
@@ -33,7 +33,7 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context);
 void xcbcanvas_set_window_size(canvas_rendering_context_t* rendering_context, int new_width, int new_height);
 
 /* Get size of window */
-canvas_size_t xcbcanvas_get_windows_size(canvas_rendering_context_t* rendering_context);
+xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering_context);
 
 /* Set the draw function */
 void xcbcanvas_set_draw_function(canvas_rendering_context_t* rendering_context, void (*draw_function) ());
