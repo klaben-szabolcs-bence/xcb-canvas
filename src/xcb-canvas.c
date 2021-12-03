@@ -218,11 +218,11 @@ void xcbcanvas_set_window_size(canvas_rendering_context_t* rendering_context, in
     XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
 }
 
-canvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering_context)
+xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering_context)
 {
   xcb_get_geometry_cookie_t cookie = xcb_get_geometry(rendering_context->c, rendering_context->win);
   xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(rendering_context->c, cookie, NULL);
-  canvas_size_t size;
+  xcbcanvas_size_t size;
   size.width = reply->width;
   size.height = reply->height;
   free(reply);
