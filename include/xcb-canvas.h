@@ -37,5 +37,7 @@ canvas_size_t xcbcanvas_get_windows_size(canvas_rendering_context_t* rendering_c
 void xcbcanvas_set_draw_function (canvas_rendering_context_t* rendering_context, void* draw_function);
 
 /* Handle the event loop of the main program */
-void xcbcanvas_handle_events (canvas_rendering_context_t* rendering_context);
+void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context);
+
+/* Handle font loading */
 #endif /* XCB_CANVAS_H */

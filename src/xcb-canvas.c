@@ -1,17 +1,16 @@
 #include "xcb-canvas.h"
 
-void xcbcanvas_print_modifiers (uint32_t mask)
+void xcbcanvas_print_modifiers(uint32_t mask)
 {
-  const char **mod, *mods[] = {
+  const char** mod, * mods[] = {
     "Shift", "Lock", "Ctrl", "Alt",
     "NumLock", "AltGr", "Win", "ScrollLock",
-    "Button1", "Button2", "Button3", "Button4", "Button5"
-  };
-  printf ("Modifier mask: ");
-  for (mod = mods ; mask; mask >>= 1, mod++)
+                        "Button1", "Button2", "Button3", "Button4", "Button5" };
+  printf("Modifier mask: ");
+  for (mod = mods; mask; mask >>= 1, mod++)
     if (mask & 1)
       printf("%s+", *mod);
-  putchar ('\n');
+  putchar('\n');
 }
 
 int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
@@ -72,21 +71,25 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
 
   rendering_context->win = win;
   rendering_context->c = c;
+  rendering_context->screen = screen;
   rendering_context->foreground = foreground;
   rendering_context->background = background;
 
   return 0;
 }
 
-void xcbcanvas_handle_events (canvas_rendering_context_t* rendering_context)
+void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context)
 {
-  xcb_connection_t *c = rendering_context->c;
-  xcb_generic_event_t *e;
-  while ((e = xcb_wait_for_event (c))) {
-    switch (e->response_type & ~0x80) {
-    case XCB_EXPOSE: {
-      xcb_expose_event_t *ev = (xcb_expose_event_t *)e;
-      rendering_context->draw_function;
+  xcb_connection_t* c = rendering_context->c;
+  xcb_generic_event_t* e;
+  while ((e = xcb_wait_for_event(c)))
+  {
+    switch (e->response_type & ~0x80)
+    {
+      case XCB_EXPOSE:
+      {
+        xcb_expose_event_t* ev = (xcb_expose_event_t*)e;
+        rendering_context->draw_function();
       /* printf ("Window %u exposed. Region to be redrawn at location (%d,%d), with dimension (%d,%d)\n", 
               ev->window, ev->x, ev->y, ev->width, ev->height); */
       xcb_flush(c);
