@@ -27,19 +27,19 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   c = xcb_connect(NULL, NULL);
 
   if (xcb_connection_has_error(c))
-    {
-      printf("Error: Can't open display: %s\n", xcb_get_error_text(c, xcb_connection_has_error(c)));
-      return -1;
-    }
+  {
+    printf("Error: Can't open display: %s\n", getenv("DISPLAY"));
+    return -1;
+  }
 
   /* Get the first screen */
   screen = xcb_setup_roots_iterator(xcb_get_setup(c)).data;
 
   if (screen == NULL)
-    {
-      printf("Error: Can't get screen\n");
-      return -1;
-    }
+  {
+    printf("Error: Can't get screen\n");
+    return -1;
+  }
 
   /* Create black (foreground) and white (background) colors */
   foreground = xcb_generate_id(c);
@@ -57,10 +57,10 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   win = xcb_generate_id(c);
 
   if (win == 0)
-    {
-      printf("Error: Can't get window id\n");
-      return -1;
-    }
+  {
+    printf("Error: Can't get window id\n");
+    return -1;
+  }
 
   /* Create the window */
   mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -81,19 +81,20 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
     mask, values);                 /* masks */
 
   if (xcb_connection_has_error(c))
-    {
-      printf("Error: Can't create window: %s\n", xcb_get_error_text(c, xcb_connection_has_error(c)));
-      return -1;
-    }
-  
+  {
+    printf("Error: Can't create window:\n");
+    return -1;
+  }
+
   /* Map the window on the screen */
   xcb_map_window(c, win);
 
   if (xcb_connection_has_error(c))
-    {
-      printf("Error: Can't map window: %s\n", xcb_get_error_text(c, xcb_connection_has_error(c)));
-      return -1;
-    }
+  {
+    printf("Error: Can't map window:\n");
+    return -1;
+  }
+
 
   xcb_flush(c);
 
@@ -285,4 +286,21 @@ xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_n
   }
 
   return (xcb_gc_t)gc;
+}
+
+void xcbcanvas_set_window_title(canvas_rendering_context_t* rendering_context, char* title)
+{
+  xcb_connection_t* c = rendering_context->c;
+  xcb_window_t win = rendering_context->win;
+  xcb_change_property(c, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME,
+    XCB_ATOM_STRING, 8, strlen(title), title);
+}
+
+void xcbcanvas_set_window_position(canvas_rendering_context_t* rendering_context, int x, int y)
+{
+  static uint32_t values[2];
+  values[0] = x;
+  values[1] = y;
+  xcb_configure_window(rendering_context->c, rendering_context->win,
+    XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
 }
