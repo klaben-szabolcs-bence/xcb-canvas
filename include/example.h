@@ -6,9 +6,9 @@
 canvas_rendering_context_t rendering_context;
 
 /* Main entry point to the program */
-int main ();
+int main();
 
 /* Draw loop of the program */
-void draw ();
+void draw();
 
 #endif /* EXAMPLE_H */

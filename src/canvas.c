@@ -1,6 +1,6 @@
 #include "canvas.h"
 
-void canvas_init (canvas_rendering_context_t* rendering_context)
+void canvas_init(canvas_rendering_context_t* rendering_context)
 {
     xcbcanvas_init_xcb(rendering_context);
 }

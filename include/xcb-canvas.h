@@ -12,11 +12,11 @@ typedef struct canvas_size_t {
 } canvas_size_t;
 
 typedef struct canvas_rendering_context_t {
-    xcb_connection_t *c;
+    xcb_connection_t* c;
     xcb_window_t win;
     xcb_gcontext_t foreground;
     xcb_gcontext_t background;
-    void* draw_function;
+    void (*draw_function) ();
 } canvas_rendering_context_t;
 
 /* TODO: Add color and line stlye support */
