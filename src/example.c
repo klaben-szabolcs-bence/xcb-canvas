@@ -3,7 +3,7 @@
 int main()
 {
     xcbcanvas_set_draw_function(&rendering_context, draw);
-    
+
     if (!canvas_init(&rendering_context))
     {
         printf("Error initialising canvas\n");
@@ -13,5 +13,5 @@ int main()
 
 void draw()
 {
-    canvas_stroke_rectangle(&rendering_context, 0, 0, 100, 100);
+    canvas_fill_rectangle(&rendering_context, 0, 0, 100, 100);
 }
