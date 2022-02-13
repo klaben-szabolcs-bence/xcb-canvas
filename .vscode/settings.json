@@ -3,5 +3,8 @@
   "C_Cpp.loggingLevel": "Warning",
   "prettier.tabWidth": 4,
   "C_Cpp.vcFormat.indent.caseLabels": true,
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "canvas-tests.h": "c"
+  }
 }
