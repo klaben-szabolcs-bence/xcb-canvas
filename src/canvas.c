@@ -2,8 +2,10 @@
 
 int canvas_init(canvas_rendering_context_t* rendering_context)
 {
-    if (!xcbcanvas_init_xcb(rendering_context))
+    int rc = xcbcanvas_init_xcb(rendering_context);
+    if (rc != 0) {
         return -1;
+    }
 
     return 0;
 }
