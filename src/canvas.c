@@ -1,5 +1,7 @@
 #include "canvas.h"
 
+// TODO: Refactor xcb calls from this file to use xcb-canvas.h methods.
+
 int canvas_init(canvas_rendering_context_t* rendering_context)
 {
     int rc = xcbcanvas_init_xcb(rendering_context);
@@ -16,13 +18,7 @@ void canvas_stroke_rectangle(
     uint16_t width, uint16_t height
 )
 {
-    xcb_rectangle_t rectangle = {
-        .x = x,
-        .y = y,
-        .width = width,
-        .height = height
-    };
-    xcb_poly_rectangle(rendering_context->c, rendering_context->win, rendering_context->foreground, 1, &rectangle);
+    xcbcanvas_stroke_rectangle(rendering_context, x, y, width, height);
 }
 
 void canvas_fill_rectangle(
@@ -31,13 +27,7 @@ void canvas_fill_rectangle(
     uint16_t width, uint16_t height
 )
 {
-    xcb_rectangle_t rectangle = {
-        .x = x,
-        .y = y,
-        .width = width,
-        .height = height
-    };
-    xcb_poly_fill_rectangle(rendering_context->c, rendering_context->win, rendering_context->foreground, 1, &rectangle);
+    xcbcanvas_fill_rectangle(rendering_context, x, y, width, height);
 }
 
 void canvas_draw_text(
@@ -46,30 +36,5 @@ void canvas_draw_text(
     const char* text
 )
 {
-    xcb_void_cookie_t       cookie_gc;
-    xcb_void_cookie_t       cookie_text;
-    xcb_generic_error_t* error;
-    xcb_gcontext_t          gc;
-    uint8_t                 length;
-
-    length = strlen(text);
-
-    gc = gc_font_get(rendering_context, "7x13");
-
-    cookie_text = xcb_image_text_8_checked(
-        rendering_context->c,
-        length,
-        rendering_context->win,
-        rendering_context->foreground,
-        x,
-        y,
-        text
-    );
-
-    error = xcb_request_check(rendering_context->c, cookie_text);
-
-    if (error) {
-        fprintf(stderr, "Error: Can't paste text: %d\n", error->error_code);
-        free(error);
-    }
+   xcbcanvas_draw_text(rendering_context, x, y, text);
 }

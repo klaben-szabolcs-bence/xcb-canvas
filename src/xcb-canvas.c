@@ -1,5 +1,13 @@
 #include "xcb-canvas.h"
 
+/* Private encapsulation for xcb variables */
+struct xcbcanvas_t {
+  xcb_connection_t* connection;
+  xcb_screen_t* screen;
+  xcb_window_t window;
+  xcb_gcontext_t gc;
+};
+
 void xcbcanvas_print_modifiers(uint32_t mask)
 {
   const char** mod, * mods[] = {
@@ -18,8 +26,7 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   xcb_connection_t* c;
   xcb_screen_t* screen;
   xcb_window_t win;
-  xcb_gcontext_t foreground;
-  xcb_gcontext_t background;
+  xcb_gcontext_t gc;
   uint32_t mask = 0;
   uint32_t values[2];
 
@@ -42,16 +49,11 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   }
 
   /* Create black (foreground) and white (background) colors */
-  foreground = xcb_generate_id(c);
+  gc = xcb_generate_id(c);
   mask = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES;
   values[0] = screen->black_pixel;
   values[1] = 0;
-  xcb_create_gc(c, foreground, screen->root, mask, values);
-  background = xcb_generate_id(c);
-  mask = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES;
-  values[0] = screen->white_pixel;
-  values[1] = 0;
-  xcb_create_gc(c, background, screen->root, mask, values);
+  xcb_create_gc(c, gc, screen->root, mask, values);
 
   /* Ask for our window's Id */
   win = xcb_generate_id(c);
@@ -98,11 +100,10 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
 
   xcb_flush(c);
 
-  rendering_context->win = win;
-  rendering_context->c = c;
-  rendering_context->screen = screen;
-  rendering_context->foreground = foreground;
-  rendering_context->background = background;
+  rendering_context->canvas->connection = c;
+  rendering_context->canvas->screen = screen;
+  rendering_context->canvas->window = win;
+  rendering_context->canvas->gc = gc;
 
   xcbcanvas_handle_events(rendering_context);
 
@@ -111,7 +112,7 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
 
 void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context)
 {
-  xcb_connection_t* c = rendering_context->c;
+  xcb_connection_t* c = rendering_context->canvas->connection;
   xcb_generic_event_t* e;
   while ((e = xcb_wait_for_event(c)))
   {
@@ -214,14 +215,14 @@ void xcbcanvas_set_window_size(canvas_rendering_context_t* rendering_context, in
   static uint32_t values[2];
   values[0] = new_width;
   values[1] = new_height;
-  xcb_configure_window(rendering_context->c, rendering_context->win,
+  xcb_configure_window(rendering_context->canvas->connection, rendering_context->canvas->window,
     XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
 }
 
 xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering_context)
 {
-  xcb_get_geometry_cookie_t cookie = xcb_get_geometry(rendering_context->c, rendering_context->win);
-  xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(rendering_context->c, cookie, NULL);
+  xcb_get_geometry_cookie_t cookie = xcb_get_geometry(rendering_context->canvas->connection, rendering_context->canvas->window);
+  xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(rendering_context->canvas->connection, cookie, NULL);
   xcbcanvas_size_t size;
   size.width = reply->width;
   size.height = reply->height;
@@ -245,9 +246,9 @@ xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_n
   xcb_gcontext_t gc;
   uint32_t mask;
 
-  xcb_connection_t* c = rendering_context->c;
-  xcb_screen_t* screen = rendering_context->screen;
-  xcb_window_t win = rendering_context->win;
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_screen_t* screen = rendering_context->canvas->screen;
+  xcb_window_t win = rendering_context->canvas->window;
 
   font = xcb_generate_id(c);
   cookie_font = xcb_open_font_checked(c, font,
@@ -290,8 +291,8 @@ xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_n
 
 void xcbcanvas_set_window_title(canvas_rendering_context_t* rendering_context, char* title)
 {
-  xcb_connection_t* c = rendering_context->c;
-  xcb_window_t win = rendering_context->win;
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_window_t win = rendering_context->canvas->window;
   xcb_change_property(c, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME,
     XCB_ATOM_STRING, 8, strlen(title), title);
 }
@@ -301,6 +302,69 @@ void xcbcanvas_set_window_position(canvas_rendering_context_t* rendering_context
   static uint32_t values[2];
   values[0] = x;
   values[1] = y;
-  xcb_configure_window(rendering_context->c, rendering_context->win,
+  xcb_configure_window(rendering_context->canvas->connection, rendering_context->canvas->window,
     XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+}
+
+void xcbcanvas_set_fill_color(canvas_rendering_context_t* rendering_context, uint32_t color)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_change_gc(c, gc, XCB_GC_FOREGROUND, &color);
+}
+
+void xcbcanvas_set_stroke_width(canvas_rendering_context_t* rendering_context, int width)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_change_gc(c, gc, XCB_GC_LINE_WIDTH, &width);
+}
+
+void xcbcanvas_stroke_rectangle(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_rectangle_t rectangle;
+  rectangle.x = x;
+  rectangle.y = y;
+  rectangle.width = width;
+  rectangle.height = height;
+  xcb_poly_rectangle(c, rendering_context->canvas->window, gc, 1, &rectangle);
+}
+
+void xcbcanvas_fill_rectangle(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_rectangle_t rectangle;
+  rectangle.x = x;
+  rectangle.y = y;
+  rectangle.width = width;
+  rectangle.height = height;
+  xcb_poly_fill_rectangle(c, rendering_context->canvas->window, gc, 1, &rectangle);
+}
+
+void xcbcanvas_draw_text(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, const char* text)
+{
+  xcb_void_cookie_t       cookie_gc;
+  xcb_void_cookie_t       cookie_text;
+  xcb_generic_error_t* error;
+  xcb_gcontext_t          gc;
+  uint8_t                 length;
+  length = strlen(text);
+  gc = gc_font_get(rendering_context, "7x13");
+  cookie_text = xcb_image_text_8_checked(
+    rendering_context->canvas->connection,
+    length,
+    rendering_context->canvas->window,
+    rendering_context->canvas->gc,
+    x,
+    y,
+    text
+  );
+  error = xcb_request_check(rendering_context->canvas->connection, cookie_text);
+  if (error) {
+    fprintf(stderr, "Error: Can't paste text: %d\n", error->error_code);
+    free(error);
+  }
 }
