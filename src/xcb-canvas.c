@@ -100,10 +100,13 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
 
   xcb_flush(c);
 
-  rendering_context->canvas->connection = c;
-  rendering_context->canvas->screen = screen;
-  rendering_context->canvas->window = win;
-  rendering_context->canvas->gc = gc;
+  xcbcanvas_t* xcbcanvas = malloc(sizeof(xcbcanvas_t));
+
+  xcbcanvas->connection = c;
+  xcbcanvas->screen = screen;
+  xcbcanvas->window = win;
+  xcbcanvas->gc = gc;
+  rendering_context->canvas = xcbcanvas;
 
   xcbcanvas_handle_events(rendering_context);
 

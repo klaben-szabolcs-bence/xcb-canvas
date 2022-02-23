@@ -3,10 +3,13 @@
 
 #include <stdint.h>
 
+#ifndef XCBCANVAS_SIZE_T
+#define XCBCANVAS_SIZE_T
 typedef struct xcbcanvas_size_t {
     int width;
     int height;
 } xcbcanvas_size_t;
+#endif
 
 typedef struct __wrap_canvas_rendering_context_t {
     xcbcanvas_size_t window_size;
