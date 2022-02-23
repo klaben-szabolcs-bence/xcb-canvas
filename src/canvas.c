@@ -38,3 +38,20 @@ void canvas_draw_text(
 {
    xcbcanvas_draw_text(rendering_context, x, y, text);
 }
+
+void canvas_set_color(
+    canvas_rendering_context_t* rendering_context,
+    uint8_t red, uint8_t green, uint8_t blue
+)
+{
+    uint32_t color = (red << 16) | (green << 8) | blue;
+    xcbcanvas_set_color(rendering_context, color);
+}
+
+void canvas_set_line_width(
+    canvas_rendering_context_t* rendering_context,
+    uint16_t width
+)
+{
+    xcbcanvas_set_stroke_width(rendering_context, width);
+}

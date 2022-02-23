@@ -306,7 +306,7 @@ void xcbcanvas_set_window_position(canvas_rendering_context_t* rendering_context
     XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
 }
 
-void xcbcanvas_set_fill_color(canvas_rendering_context_t* rendering_context, uint32_t color)
+void xcbcanvas_set_color(canvas_rendering_context_t* rendering_context, uint32_t color)
 {
   xcb_connection_t* c = rendering_context->canvas->connection;
   xcb_gcontext_t gc = rendering_context->canvas->gc;
