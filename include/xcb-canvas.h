@@ -24,8 +24,6 @@ typedef struct canvas_rendering_context_t {
     void (*draw_function) ();
 } canvas_rendering_context_t;
 
-/* TODO: Add color and line stlye support */
-
 /* Prints pressed modifier keys */
 void xcbcanvas_print_modifiers(uint32_t mask);
 
