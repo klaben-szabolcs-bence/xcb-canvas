@@ -108,6 +108,9 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   xcbcanvas->gc = gc;
   rendering_context->canvas = xcbcanvas;
 
+  path_t* path = malloc(sizeof(path_t));
+  rendering_context->path = path;
+
   xcbcanvas_handle_events(rendering_context);
 
   return 0;
@@ -231,11 +234,6 @@ xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering
   size.height = reply->height;
   free(reply);
   return size;
-}
-
-void xcbcanvas_set_draw_function(canvas_rendering_context_t* rendering_context, void (*draw_function)())
-{
-  rendering_context->draw_function = draw_function;
 }
 
 xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_name)
@@ -370,4 +368,60 @@ void xcbcanvas_draw_text(canvas_rendering_context_t* rendering_context, int16_t 
     fprintf(stderr, "Error: Can't paste text: %d\n", error->error_code);
     free(error);
   }
+}
+
+void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_point_t points[2];
+  points[0].x = x1;
+  points[0].y = y1;
+  points[1].x = x2;
+  points[1].y = y2;
+  xcb_poly_line(c, rendering_context->canvas->window, gc, XCB_COORD_MODE_ORIGIN, 2, points);
+}
+
+void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_arc_t arc;
+  arc.x = x;
+  arc.y = y;
+  arc.width = width;
+  arc.height = height;
+  arc.angle1 = angle1;
+  arc.angle2 = angle2;
+  xcb_poly_arc(c, rendering_context->canvas->window, gc, 1, &arc);
+}
+
+void xcbcanvas_quadratic_curve(canvas_rendering_context_t* rendering_context, int16_t cpx, int16_t cpy, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_point_t points[3];
+  points[0].x = cpx;
+  points[0].y = cpy;
+  points[1].x = x1;
+  points[1].y = y1;
+  points[2].x = x2;
+  points[2].y = y2;
+  xcb_poly_line(c, rendering_context->canvas->window, gc, XCB_COORD_MODE_ORIGIN, 3, points);
+}
+
+void xcbcanvas_bezier_curve(canvas_rendering_context_t* rendering_context, int16_t cpx1, int16_t cpy1, int16_t cpx2, int16_t cpy2, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_point_t points[4];
+  points[0].x = cpx1;
+  points[0].y = cpy1;
+  points[1].x = cpx2;
+  points[1].y = cpy2;
+  points[2].x = x1;
+  points[2].y = y1;
+  points[3].x = x2;
+  points[3].y = y2;
+  xcb_poly_line(c, rendering_context->canvas->window, gc, XCB_COORD_MODE_ORIGIN, 4, points);
 }

@@ -2,7 +2,7 @@
 
 int main()
 {
-    xcbcanvas_set_draw_function(&rendering_context, draw);
+    canvas_set_draw_function(&rendering_context, draw);
 
     if (!canvas_init(&rendering_context))
     {
@@ -10,7 +10,7 @@ int main()
         return 1;
     }
 
-    free(rendering_context.canvas);
+    canvas_dealloc(&rendering_context);
 }
 
 void draw()
