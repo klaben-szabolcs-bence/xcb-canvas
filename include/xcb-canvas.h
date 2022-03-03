@@ -7,14 +7,17 @@
 
 #include <xcb/xcb.h>
 
+typedef struct arc_t arc_t; // The rest of the data needed to draw an arc.
+typedef enum sub_path_type_t sub_path_type_t;
+typedef struct sub_path_t sub_path_t;
+
 #ifndef XCBCANVAS_SIZE_T
 #define XCBCANVAS_SIZE_T
-
 typedef struct xcbcanvas_size_t {
     int width;
     int height;
 } xcbcanvas_size_t;
-#endif
+#endif /* XCBCANVAS_SIZE_T */
 
 typedef struct xcbcanvas_t xcbcanvas_t;
 
@@ -71,6 +74,9 @@ void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, i
 
 /* Draw an arc */
 void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2);
+
+/* Draw a filled arc */
+void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2);
 
 /* Draw the stored path */
 void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context);

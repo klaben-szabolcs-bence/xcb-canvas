@@ -4,13 +4,6 @@
 #include "xcb-canvas.h"
 
 // TODO: Implement drawing text
-typedef struct position_t position_t;
-typedef struct angle_t angle_t; // An angle represented in 1/64 of a degree. (90 degrees = 90 << 6)
-typedef enum sub_path_type_t sub_path_type_t;
-typedef struct sub_path_t sub_path_t;
-
-
-
 /**
  * @brief Initializes the canvas.
  *
@@ -157,14 +150,36 @@ void canvas_line_to(
  * @param x                 The x coordinate of the position.
  * @param y                 The y coordinate of the position.
  * @param radius            The radius of the arc.
- * @param start_angle       The start angle of the arc.
- * @param end_angle         The end angle of the arc.
+ * @param start_angle       The start angle of the arc in 1/64 of a degree.
+ * @param end_angle         The end angle of the arc in 1/64 of a degree.
+ * @param anticlockwise     Whether the arc should be drawn in anticlockwise
+ *
+ * @note To get the correct angles, use the following formula: angle << 6.
  */
 void canvas_arc(
     canvas_rendering_context_t* rendering_context,
     int16_t x, int16_t y,
     uint16_t radius,
-    angle_t start_angle, angle_t end_angle
+    uint16_t start_angle, uint16_t end_angle,
+    _Bool anticlockwise
+);
+
+/**
+ * @brief Draws an arc with the tangent lines from the current pen position to the first position,
+ *  and from the first to the second position with the given radius.
+ *
+ * @param rendering_context The rendering context to use.
+ * @param x1                The x coordinate of the first position.
+ * @param y1                The y coordinate of the first position.
+ * @param x2                The x coordinate of the second position.
+ * @param y2                The y coordinate of the second position.
+ * @param radius            The radius of the arc.
+ */
+void canvas_arc_to(
+    canvas_rendering_context_t* rendering_context,
+    int16_t x1, int16_t y1,
+    int16_t x2, int16_t y2,
+    uint16_t radius
 );
 
 /**

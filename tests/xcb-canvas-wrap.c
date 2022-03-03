@@ -35,3 +35,4 @@ void __wrap_xcbcanvas_handle_events(__wrap_canvas_rendering_context_t* rendering
 {
     rendering_context->draw_function();
 }
+

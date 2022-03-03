@@ -8,6 +8,32 @@ struct xcbcanvas_t {
   xcb_gcontext_t gc;
 };
 
+#ifndef CANVAS_PATH_TYPES
+#define CANVAS_PATH_TYPES
+/* Encapsulated types */
+struct arc_t {
+  uint16_t start_radius_or_cp2_x;
+  uint16_t end_radius_or_cp2_y;
+  uint16_t radius;
+};
+
+enum sub_path_type_t {
+  SUBPATH_TYPE_MOVE,
+  SUBPATH_TYPE_LINE,
+  SUBPATH_TYPE_ARC,
+  SUBPATH_TYPE_ARC_TO,
+  SUBPATH_TYPE_QUADRATIC_CURVE,
+  SUBPATH_TYPE_CUBIC_CURVE,
+  SUBPATH_TYPE_CLOSE
+};
+
+struct sub_path_t {
+  xcb_point_t point;
+  arc_t arc;
+  sub_path_type_t type;
+};
+#endif /* CANVAS_PATH_TYPES */
+
 void xcbcanvas_print_modifiers(uint32_t mask)
 {
   const char** mod, * mods[] = {
@@ -379,7 +405,7 @@ void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, i
   points[0].y = y1;
   points[1].x = x2;
   points[1].y = y2;
-  xcb_poly_line(c, rendering_context->canvas->window, gc, XCB_COORD_MODE_ORIGIN, 2, points);
+  xcb_poly_line(c, XCB_COORD_MODE_ORIGIN, rendering_context->canvas->window, gc, 2, points);
 }
 
 void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2)
@@ -396,32 +422,184 @@ void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int
   xcb_poly_arc(c, rendering_context->canvas->window, gc, 1, &arc);
 }
 
-void xcbcanvas_quadratic_curve(canvas_rendering_context_t* rendering_context, int16_t cpx, int16_t cpy, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2)
 {
   xcb_connection_t* c = rendering_context->canvas->connection;
   xcb_gcontext_t gc = rendering_context->canvas->gc;
-  xcb_point_t points[3];
-  points[0].x = cpx;
-  points[0].y = cpy;
-  points[1].x = x1;
-  points[1].y = y1;
-  points[2].x = x2;
-  points[2].y = y2;
-  xcb_poly_line(c, rendering_context->canvas->window, gc, XCB_COORD_MODE_ORIGIN, 3, points);
+  xcb_arc_t arc;
+  arc.x = x;
+  arc.y = y;
+  arc.width = width;
+  arc.height = height;
+  arc.angle1 = angle1;
+  arc.angle2 = angle2;
+  xcb_poly_fill_arc(c, rendering_context->canvas->window, gc, 1, &arc);
 }
 
-void xcbcanvas_bezier_curve(canvas_rendering_context_t* rendering_context, int16_t cpx1, int16_t cpy1, int16_t cpx2, int16_t cpy2, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+//#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
+void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
-  xcb_point_t points[4];
-  points[0].x = cpx1;
-  points[0].y = cpy1;
-  points[1].x = cpx2;
-  points[1].y = cpy2;
-  points[2].x = x1;
-  points[2].y = y1;
-  points[3].x = x2;
-  points[3].y = y2;
-  xcb_poly_line(c, rendering_context->canvas->window, gc, XCB_COORD_MODE_ORIGIN, 4, points);
+
+  if (rendering_context->path->sub_path_count == 0) {
+    printf("Error: No sub-paths in path\n");
+    return;
+  }
+
+  /*  Technically valid, but would do nothing
+      since the first sub-path is treated as just a move to.
+  */
+  if (rendering_context->path->sub_path_count == 1) return;
+
+  /* Render a outline path */
+  xcb_point_t current_position = rendering_context->path->sub_paths[0].point;
+  xcb_point_t closing_point = rendering_context->path->sub_paths[0].point;
+  xcb_point_t points[rendering_context->path->sub_path_count + 1];
+  points[0] = current_position;
+  uint16_t moves_since_close = 0;
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+  printf("Path: %d sub-paths\n", rendering_context->path->sub_path_count);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+  if (!rendering_context->path->filled) {
+    for (int i = 1; i < rendering_context->path->sub_path_count; i++) {
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+      printf("Current position: %d, %d\n", current_position.x, current_position.y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+      switch (rendering_context->path->sub_paths[i].type) {
+        case SUBPATH_TYPE_MOVE:
+          current_position = rendering_context->path->sub_paths[i].point;
+          if (moves_since_close > 1) points[moves_since_close + 1] = closing_point;
+          moves_since_close = 0;
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Move to: %d, %d\n", i, current_position.x, current_position.y);
+
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          break;
+        case SUBPATH_TYPE_LINE:
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Line to: %d, %d\n", i, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          xcbcanvas_line(rendering_context, current_position.x, current_position.y, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+          current_position = rendering_context->path->sub_paths[i].point;
+          points[++moves_since_close] = current_position;
+          break;
+        case SUBPATH_TYPE_ARC:
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Arc: %d, %d, %d, %d, %d, %d\n",
+            i,
+            rendering_context->path->sub_paths[i].point.x,
+            rendering_context->path->sub_paths[i].point.y,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          xcbcanvas_arc(rendering_context,
+            rendering_context->path->sub_paths[i].point.x,
+            rendering_context->path->sub_paths[i].point.y,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
+          break;
+        case SUBPATH_TYPE_ARC_TO:
+        case SUBPATH_TYPE_QUADRATIC_CURVE:
+        case SUBPATH_TYPE_CUBIC_CURVE:
+          printf("Error: Unsupported path sub-path type: %d\n", rendering_context->path->sub_paths[i].type);
+          break;
+        case SUBPATH_TYPE_CLOSE:
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Close (%d, %d)\n", i, closing_point.x, closing_point.y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          if (moves_since_close > 1) points[moves_since_close + 1] = closing_point;
+          xcbcanvas_line(rendering_context, current_position.x, current_position.y, closing_point.x, closing_point.y);
+          current_position = rendering_context->path->sub_paths[0].point;
+          break;
+      }
+    }
+  }
+  /* Render a filled path */
+  else {
+    for (int i = 1; i < rendering_context->path->sub_path_count; i++) {
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+      printf("Current position: %d, %d\n", current_position.x, current_position.y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+      switch (rendering_context->path->sub_paths[i].type) {
+        case SUBPATH_TYPE_MOVE:
+          if (moves_since_close > 1) {
+            points[++moves_since_close] = closing_point;
+            xcb_fill_poly(
+              rendering_context->canvas->connection,
+              rendering_context->canvas->window,
+              rendering_context->canvas->gc,
+              XCB_POLY_SHAPE_COMPLEX,
+              XCB_COORD_MODE_ORIGIN,
+              moves_since_close,
+              points);
+          }
+          moves_since_close = 0;
+          current_position = rendering_context->path->sub_paths[i].point;
+          closing_point = current_position;
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Move to: %d, %d\n", i, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          break;
+        case SUBPATH_TYPE_LINE:
+          current_position = rendering_context->path->sub_paths[i].point;
+          points[++moves_since_close] = current_position;
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d:\tLine to: %d, %d\n", i, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+          printf("\tMoves since close: %d\n", moves_since_close);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          break;
+        case SUBPATH_TYPE_ARC:
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Arc: %d, %d, %d, %d, %d, %d\n",
+            i,
+            rendering_context->path->sub_paths[i].point.x,
+            rendering_context->path->sub_paths[i].point.y,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          xcbcanvas_fill_arc(rendering_context,
+            rendering_context->path->sub_paths[i].point.x,
+            rendering_context->path->sub_paths[i].point.y,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y
+          );
+          break;
+        case SUBPATH_TYPE_ARC_TO:
+        case SUBPATH_TYPE_QUADRATIC_CURVE:
+        case SUBPATH_TYPE_CUBIC_CURVE:
+          printf("Error: Unsupported path sub-path type: %d\n", rendering_context->path->sub_paths[i].type);
+          break;
+        case SUBPATH_TYPE_CLOSE:
+          if (moves_since_close > 1) {
+            points[++moves_since_close] = closing_point;
+            xcb_fill_poly(
+              rendering_context->canvas->connection,
+              rendering_context->canvas->window,
+              rendering_context->canvas->gc,
+              XCB_POLY_SHAPE_COMPLEX,
+              XCB_COORD_MODE_ORIGIN,
+              moves_since_close,
+              points);
+          }
+          current_position = rendering_context->path->sub_paths[0].point;
+          moves_since_close = 0;
+#ifdef XCBCANVAS_DEBUG_DRAW_PATH
+          printf("#%d: Close (%d, %d)\n", i, closing_point.x, closing_point.y);
+          for (int j = 0; j < moves_since_close; j++) {
+            printf("  Point %d: (%d, %d)\n", j, points[j].x, points[j].y);
+          }
+#endif // XCBCANVAS_DEBUG_DRAW_PATH
+          break;
+      }
+    }
+  }
+
+  xcb_flush(rendering_context->canvas->connection);
 }
