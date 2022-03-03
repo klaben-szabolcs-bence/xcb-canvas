@@ -73,10 +73,10 @@ void xcbcanvas_draw_text(canvas_rendering_context_t* rendering_context, int16_t 
 void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 
 /* Draw an arc */
-void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2);
+void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2);
 
 /* Draw a filled arc */
-void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2);
+void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2);
 
 /* Draw the stored path */
 void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context);

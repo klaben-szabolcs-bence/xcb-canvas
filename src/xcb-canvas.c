@@ -12,8 +12,8 @@ struct xcbcanvas_t {
 #define CANVAS_PATH_TYPES
 /* Encapsulated types */
 struct arc_t {
-  uint16_t start_radius_or_cp2_x;
-  uint16_t end_radius_or_cp2_y;
+  int16_t start_radius_or_cp2_x;
+  int16_t end_radius_or_cp2_y;
   uint16_t radius;
 };
 
@@ -408,7 +408,7 @@ void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, i
   xcb_poly_line(c, XCB_COORD_MODE_ORIGIN, rendering_context->canvas->window, gc, 2, points);
 }
 
-void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2)
+void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
 {
   xcb_connection_t* c = rendering_context->canvas->connection;
   xcb_gcontext_t gc = rendering_context->canvas->gc;
@@ -422,7 +422,7 @@ void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int
   xcb_poly_arc(c, rendering_context->canvas->window, gc, 1, &arc);
 }
 
-void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2)
+void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
 {
   xcb_connection_t* c = rendering_context->canvas->connection;
   xcb_gcontext_t gc = rendering_context->canvas->gc;
@@ -436,7 +436,7 @@ void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x
   xcb_poly_fill_arc(c, rendering_context->canvas->window, gc, 1, &arc);
 }
 
-//#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
+#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
 void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
 {
 
@@ -460,7 +460,7 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
   printf("Path: %d sub-paths\n", rendering_context->path->sub_path_count);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
   if (!rendering_context->path->filled) {
-    for (int i = 1; i < rendering_context->path->sub_path_count; i++) {
+    for (int i = 0; i < rendering_context->path->sub_path_count; i++) {
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
       printf("Current position: %d, %d\n", current_position.x, current_position.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
@@ -488,16 +488,16 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
             i,
             rendering_context->path->sub_paths[i].point.x,
             rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y << 6);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           xcbcanvas_arc(rendering_context,
             rendering_context->path->sub_paths[i].point.x,
             rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.radius,
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.radius * 2,
             rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
             rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
           break;
@@ -519,7 +519,7 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
   }
   /* Render a filled path */
   else {
-    for (int i = 1; i < rendering_context->path->sub_path_count; i++) {
+    for (int i = 0; i < rendering_context->path->sub_path_count; i++) {
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
       printf("Current position: %d, %d\n", current_position.x, current_position.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
@@ -557,18 +557,18 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
             i,
             rendering_context->path->sub_paths[i].point.x,
             rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y << 6);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           xcbcanvas_fill_arc(rendering_context,
             rendering_context->path->sub_paths[i].point.x,
             rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.radius,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.radius * 2,
+            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
+            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y << 6
           );
           break;
         case SUBPATH_TYPE_ARC_TO:
@@ -600,6 +600,4 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
       }
     }
   }
-
-  xcb_flush(rendering_context->canvas->connection);
 }

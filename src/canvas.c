@@ -4,8 +4,8 @@
 #define CANVAS_PATH_TYPES
 /* Encapsulated types */
 struct arc_t {
-    uint16_t start_radius_or_cp2_x;
-    uint16_t end_radius_or_cp2_y;
+    int16_t start_radius_or_cp2_x;
+    int16_t end_radius_or_cp2_y;
     uint16_t radius;
 };
 
@@ -149,7 +149,7 @@ void canvas_arc(
     uint16_t radius,
     uint16_t start_angle,
     uint16_t end_angle,
-    _Bool anticlockwise
+    _Bool clockwise
 )
 {
     if (rendering_context->path->sub_path_count % 10 == 9)
@@ -160,15 +160,15 @@ void canvas_arc(
     sub_path->point.x = x;
     sub_path->point.y = y;
     sub_path->arc.radius = radius;
-    if (anticlockwise)
+    if (!clockwise)
     {
         sub_path->arc.start_radius_or_cp2_x = abs(start_angle);
         sub_path->arc.end_radius_or_cp2_y = abs(end_angle);
     }
     else
     {
-        sub_path->arc.start_radius_or_cp2_x = abs(end_angle) * -1;
-        sub_path->arc.end_radius_or_cp2_y = abs(start_angle) * -1;
+        sub_path->arc.start_radius_or_cp2_x = abs(start_angle) * -1;
+        sub_path->arc.end_radius_or_cp2_y = abs(end_angle) * -1;
     }
     sub_path->type = SUBPATH_TYPE_ARC;
     rendering_context->path->sub_path_count++;
