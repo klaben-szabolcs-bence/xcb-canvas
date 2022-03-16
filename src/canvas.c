@@ -40,6 +40,7 @@ void canvas_dealloc(canvas_rendering_context_t* rendering_context)
 {
     free(rendering_context->canvas);
     free(rendering_context->path);
+    free(rendering_context->font);
 }
 
 void canvas_set_draw_function(canvas_rendering_context_t* rendering_context, void (*draw_function)())
@@ -77,13 +78,38 @@ void canvas_clear_rectangle(
     xcbcanvas_set_color(rendering_context, stack_color);
 }
 
-void canvas_draw_text(
+void canvas_fill_text(
     canvas_rendering_context_t* rendering_context,
-    int16_t x, int16_t y,
-    const char* text
+    const char* text,
+    int16_t x, int16_t y
 )
 {
     xcbcanvas_draw_text(rendering_context, x, y, text);
+}
+
+void canvas_font4(
+    canvas_rendering_context_t* rendering_context,
+    const char* family,
+    uint16_t size,
+    const char* weight,
+    _Bool italic
+)
+{
+    xcbcanvas_font_t font;
+    font.family = family;
+    font.size = size;
+    font.weight = weight;
+    font.italic = italic;
+    xcbcanvas_update_font(rendering_context, &font);
+}
+
+void canvas_font2(
+    canvas_rendering_context_t* rendering_context,
+    const char* family,
+    uint16_t size
+)
+{
+    canvas_font4(rendering_context, family, size, "Medium", 0);
 }
 
 void canvas_set_color(

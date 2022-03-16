@@ -3,7 +3,6 @@
 
 #include "xcb-canvas.h"
 
-// TODO: Implement drawing text
 /**
  * @brief Initializes the canvas.
  *
@@ -82,10 +81,42 @@ void canvas_clear_rectangle(
  * @param y                 The y coordinate (the baseline) of the text.
  * @param text              The text to draw.
  */
-void canvas_draw_text(
+void canvas_fill_text(
     canvas_rendering_context_t* rendering_context,
-    int16_t x, int16_t y,
-    const char* text
+    const char* text,
+    int16_t x, int16_t y
+);
+
+/**
+ * @brief Updates the font used for text drawing.
+ *
+ * @param rendering_context The rendering context used.
+ * @param family            The font family to use. Leave NULL to not change.
+ * @param size              The font size to use. Leave 0 to not change.
+ * @param weight            The font weight to use.
+ * Font weight should be given as a string. Example: "Bold" or "Medium". Leave NULL to not change.
+ * @param italic            Whether the font should be italic. Will always change.
+ */
+void canvas_font4(
+    canvas_rendering_context_t* rendering_context,
+    const char* family,
+    uint16_t size,
+    const char* weight,
+    _Bool italic
+);
+
+/**
+ * @brief Updates the font used for text drawing.
+ * Weight will be set to Medium and it will be non-italic.
+ *
+ * @param rendering_context The rendering context used.
+ * @param family            The font family to use. Leave NULL to not change.
+ * @param size              The font size to use. Leave 0 to not change.
+ */
+void canvas_font2(
+    canvas_rendering_context_t* rendering_context,
+    const char* family,
+    uint16_t size
 );
 
 /**

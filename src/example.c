@@ -37,4 +37,10 @@ void draw()
     canvas_begin_path(&rendering_context);
     canvas_arc(&rendering_context, 300, 300, 100, 0, 360, 0);
     canvas_fill(&rendering_context);
+
+    /* Write Hello World */
+    canvas_set_color(&rendering_context, 0, 0, 0);
+    canvas_set_line_width(&rendering_context, 1);
+    canvas_font2(&rendering_context, "helvetica", 24);
+    canvas_fill_text(&rendering_context, "Hello World", 500, 200);
 }
