@@ -1,15 +1,7 @@
 #ifndef CANVAS_H
 #define CANVAS_H
 
-#include "xcb-canvas.h"
-
-/**
- * @brief Initializes the canvas.
- *
- * @param rendering_context The rendering context to use.
- * @return -1 on failure, 0 on success.
-*/
-int canvas_init(canvas_rendering_context_t* rendering_context);
+#include "canvas-rendering-context.h"
 
 /**
  * @brief Deallocates the canvas.
@@ -17,16 +9,6 @@ int canvas_init(canvas_rendering_context_t* rendering_context);
  * @param rendering_context The rendering context to use.
 */
 void canvas_dealloc(canvas_rendering_context_t* rendering_context);
-
-/**
- * @brief Sets the drawing function.
- *
- * @param rendering_context The rendering context to use.
- * @param draw_function     The drawing function to use.
- */
-void canvas_set_draw_function(canvas_rendering_context_t* rendering_context, void (*draw_function) ());
-
-/* TODO: Add "path" support from Canvas. */
 
 /**
  * @brief Draws a rectangle outline.
