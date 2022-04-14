@@ -29,7 +29,8 @@ void draw(canvas_rendering_context_t* rendering_context)
     canvas_set_color(rendering_context, 0, 255, 0);
     canvas_set_line_width(rendering_context, 10);
     canvas_begin_path(rendering_context);
-    canvas_arc(rendering_context, 300, 300, 100, 0, 360, 0);
+    canvas_arc(rendering_context, 300, 500, 100, 0, 360, 0);
+    canvas_close_path(rendering_context);
     canvas_fill(rendering_context);
 
     /* Write Hello World */
