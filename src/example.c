@@ -1,4 +1,5 @@
 #include "example.h"
+#include <time.h>
 
 int main()
 {
@@ -8,8 +9,13 @@ int main()
     return 0;
 }
 
+#define MEASURE_DRAW_TIME // comment this line to disable time measurement
 void draw(canvas_rendering_context_t* rendering_context)
 {
+#ifdef MEASURE_DRAW_TIME
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+#endif
     canvas_fill_rectangle(rendering_context, 0, 0, 100, 100);
     canvas_set_line_width(rendering_context, 20);
     canvas_set_color(rendering_context, 255, 0, 0);
@@ -38,4 +44,9 @@ void draw(canvas_rendering_context_t* rendering_context)
     canvas_set_line_width(rendering_context, 1);
     canvas_font2(rendering_context, "helvetica", 24);
     canvas_fill_text(rendering_context, "Hello World", 500, 200);
+
+#ifdef MEASURE_DRAW_TIME
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    printf("Time taken: %f\n", (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0);
+#endif
 }
