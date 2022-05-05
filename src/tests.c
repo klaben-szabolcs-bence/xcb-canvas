@@ -1,5 +1,6 @@
 #include <tests.h>
 #include <canvas-tests.h>
+#include <xcb-canvas-wrap.h>
 
 /* A test case that does nothing and succeeds. */
 static void null_test_success(void** state) {
@@ -45,13 +46,13 @@ int main(void)
     const struct CMUnitTest xcbcanvas_tests[] =
     {
         // TODO: Add tests for xcb-canvas.c
-        //cmocka_unit_test(),
+        cmocka_unit_test(xcbcanvas_draw_path_test)
     };
 
     const struct CMUnitTest canvas_tests[] =
     {
         // TODO: Add tests for canvas.c
-        cmocka_unit_test(canvas_init_test)
+        //cmocka_unit_test(canvas_init_test)
     };
 
     // If setup and teardown functions are not needed, then NULL may be passed instead

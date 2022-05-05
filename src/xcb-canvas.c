@@ -455,6 +455,16 @@ void xcbcanvas_fill_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t widt
 void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
 {
 
+  if (path == NULL) {
+    printf("Error: Canvas path is NULL\n");
+    return;
+  }
+
+  if (path->sub_paths == NULL) {
+    printf("Error: Sub-paths is NULL\n");
+    return;
+  }
+
   if (path->sub_path_count == 0) {
     printf("Error: No sub-paths in path\n");
     return;
@@ -463,7 +473,10 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
   /*  Technically valid, but would do nothing
       since the first sub-path is treated as just a move to.
   */
-  if (path->sub_path_count == 1) return;
+  if (path->sub_path_count == 1) {
+    printf("Warning: Only one sub-path in path\n");
+    return;
+  }
 
   /* Render a outline path */
   xcb_point_t current_position = path->sub_paths[0].point;
