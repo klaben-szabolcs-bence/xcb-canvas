@@ -5,6 +5,10 @@ OUTPUT_FOLDER:=build
 PKG_CONF:=pkg-config --cflags --libs
 WRAP:=-Wl,--wrap=xcbcanvas_init_xcb,--wrap=canvas_rendering_context_t
 
+line-benchmark: lib
+	$(CC) $(STD) $(INCLUDE) -Wall src/line-benchmark.c -o $(OUTPUT_FOLDER)/line-benchmark \
+	$(OUTPUT_FOLDER)/lib-xcb-canvas.a `$(PKG_CONF) xcb x11`
+
 example: lib
 	$(CC) $(STD) $(INCLUDE) -Wall src/example.c -o $(OUTPUT_FOLDER)/example \
 	$(OUTPUT_FOLDER)/lib-xcb-canvas.a `$(PKG_CONF) xcb x11`

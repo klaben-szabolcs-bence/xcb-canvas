@@ -292,6 +292,7 @@ void xcbcanvas_set_window_size(xcbcanvas_t* canvas, int new_width, int new_heigh
   values[1] = new_height;
   xcb_configure_window(canvas->connection, canvas->window,
     XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
+  xcb_flush(canvas->connection);
 }
 
 xcbcanvas_size_t xcbcanvas_get_window_size(xcbcanvas_t* canvas)
@@ -339,6 +340,7 @@ void xcbcanvas_load_font(xcbcanvas_t* canvas, char* font_name)
     free(error);
     return;
   }
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_set_window_title(xcbcanvas_t* canvas, char* title)
@@ -347,6 +349,7 @@ void xcbcanvas_set_window_title(xcbcanvas_t* canvas, char* title)
   xcb_window_t win = canvas->window;
   xcb_change_property(c, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME,
     XCB_ATOM_STRING, 8, strlen(title), title);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_set_window_position(xcbcanvas_t* canvas, int x, int y)
@@ -356,6 +359,7 @@ void xcbcanvas_set_window_position(xcbcanvas_t* canvas, int x, int y)
   values[1] = y;
   xcb_configure_window(canvas->connection, canvas->window,
     XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_set_color(xcbcanvas_t* canvas, uint32_t color)
@@ -363,6 +367,7 @@ void xcbcanvas_set_color(xcbcanvas_t* canvas, uint32_t color)
   xcb_connection_t* c = canvas->connection;
   xcb_gcontext_t gc = canvas->gc;
   xcb_change_gc(c, gc, XCB_GC_FOREGROUND, &color);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_set_stroke_width(xcbcanvas_t* canvas, int width)
@@ -370,6 +375,7 @@ void xcbcanvas_set_stroke_width(xcbcanvas_t* canvas, int width)
   xcb_connection_t* c = canvas->connection;
   xcb_gcontext_t gc = canvas->gc;
   xcb_change_gc(c, gc, XCB_GC_LINE_WIDTH, &width);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_stroke_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height)
@@ -382,6 +388,7 @@ void xcbcanvas_stroke_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint1
   rectangle.width = width;
   rectangle.height = height;
   xcb_poly_rectangle(c, canvas->window, gc, 1, &rectangle);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_fill_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height)
@@ -394,6 +401,7 @@ void xcbcanvas_fill_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_
   rectangle.width = width;
   rectangle.height = height;
   xcb_poly_fill_rectangle(c, canvas->window, gc, 1, &rectangle);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_draw_text(xcbcanvas_t* canvas, int16_t x, int16_t y, const char* text)
@@ -413,6 +421,7 @@ void xcbcanvas_draw_text(xcbcanvas_t* canvas, int16_t x, int16_t y, const char* 
     fprintf(stderr, "Error: Can't paste text: %d\n", error->error_code);
     free(error);
   }
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_line(xcbcanvas_t* canvas, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
@@ -425,6 +434,7 @@ void xcbcanvas_line(xcbcanvas_t* canvas, int16_t x1, int16_t y1, int16_t x2, int
   points[1].x = x2;
   points[1].y = y2;
   xcb_poly_line(c, XCB_COORD_MODE_ORIGIN, canvas->window, gc, 2, points);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
@@ -439,6 +449,7 @@ void xcbcanvas_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, ui
   arc.angle1 = angle1;
   arc.angle2 = angle2;
   xcb_poly_arc(c, canvas->window, gc, 1, &arc);
+  xcb_flush(canvas->connection);
 }
 
 void xcbcanvas_fill_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
@@ -453,6 +464,7 @@ void xcbcanvas_fill_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t widt
   arc.angle1 = angle1;
   arc.angle2 = angle2;
   xcb_poly_fill_arc(c, canvas->window, gc, 1, &arc);
+  xcb_flush(canvas->connection);
 }
 
 //#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
@@ -544,7 +556,7 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
           printf("Error: Unsupported path sub-path type: %d\n", path->sub_paths[i].type);
           break;
         case SUBPATH_TYPE_CLOSE:
-        /* Close the shape */
+          /* Close the shape */
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Close (%d, %d)\n", i, closing_point.x, closing_point.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
@@ -642,4 +654,6 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
       }
     }
   }
+
+  xcb_flush(canvas->connection);
 }
