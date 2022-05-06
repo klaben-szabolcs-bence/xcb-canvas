@@ -8,6 +8,8 @@ struct xcbcanvas_t {
   xcb_gcontext_t gc;
 };
 
+
+
 #ifndef CANVAS_PATH_TYPES
 #define CANVAS_PATH_TYPES
 /* Encapsulated types */
@@ -47,14 +49,15 @@ void xcbcanvas_print_modifiers(uint32_t mask)
   putchar('\n');
 }
 
-int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
+//#define XCBCANVAS_INIT_XCB_DEBUG //uncomment to debug the function below
+xcbcanvas_t* xcbcanvas_init_xcb()
 {
   xcb_connection_t* c;
   xcb_screen_t* screen;
   xcb_window_t win;
   xcb_gcontext_t gc;
   uint32_t mask = 0;
-  uint32_t values[2];
+  uint32_t values[3];
 
   /* Open the connection to the X server */
   c = xcb_connect(NULL, NULL);
@@ -62,8 +65,12 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   if (xcb_connection_has_error(c))
   {
     printf("Error: Can't open display: %s\n", getenv("DISPLAY"));
-    return -1;
+    exit(-1);
   }
+
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Connected to the X server\n");
+#endif
 
   /* Get the first screen */
   screen = xcb_setup_roots_iterator(xcb_get_setup(c)).data;
@@ -71,8 +78,12 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   if (screen == NULL)
   {
     printf("Error: Can't get screen\n");
-    return -1;
+    exit(-1);
   }
+
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Screen: %d\n", screen->root);
+#endif
 
   /* Create black (foreground) and white (background) colors */
   gc = xcb_generate_id(c);
@@ -88,8 +99,12 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   if (win == 0)
   {
     printf("Error: Can't get window id\n");
-    return -1;
+    exit(-1);
   }
+
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Window id: %d\n", win);
+#endif
 
   /* Create the window */
   mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -112,8 +127,12 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   if (xcb_connection_has_error(c))
   {
     printf("Error: Can't create window:\n");
-    return -1;
+    exit(-1);
   }
+
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Window created\n");
+#endif
 
   xcb_void_cookie_t cookie = xcb_change_property_checked(c,
     XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
@@ -123,8 +142,12 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   {
     fprintf(stderr, "Error changing window title: %d\n", error->error_code);
     free(error);
-    return;
+    exit(-1);
   }
+
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Window title changed\n");
+#endif
 
   /* Map the window on the screen */
   xcb_map_window(c, win);
@@ -132,39 +155,39 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   if (xcb_connection_has_error(c))
   {
     printf("Error: Can't map window:\n");
-    return -1;
+    exit(-1);
   }
+
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Window mapped\n");
+#endif
 
   xcb_flush(c);
 
-  xcbcanvas_t* xcbcanvas = malloc(sizeof(xcbcanvas_t));
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("Flushed\n");
+#endif
 
+  xcbcanvas_t* xcbcanvas = malloc(sizeof(xcbcanvas_t));
   xcbcanvas->connection = c;
   xcbcanvas->screen = screen;
   xcbcanvas->window = win;
   xcbcanvas->gc = gc;
-  rendering_context->canvas = xcbcanvas;
 
-  path_t* path = malloc(sizeof(path_t));
-  rendering_context->path = path;
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
+  printf("XCB canvas initialized\n");
+#endif
 
-  rendering_context->font = malloc(sizeof(xcbcanvas_font_t));
-
-  xcbcanvas_font_t font;
-  font.family = "Times";
-  font.size = 12;
-  font.weight = "Medium";
-  font.italic = 0;
-  xcbcanvas_update_font(rendering_context, &font);
-
-  xcbcanvas_handle_events(rendering_context);
-
-  return 0;
+  return xcbcanvas;
 }
 
-void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context)
+void xcbcanvas_handle_events(
+  canvas_rendering_context_t* rendering_context,
+  xcbcanvas_t* canvas,
+  void (*draw_function) (canvas_rendering_context_t* rendering_context)
+)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
+  xcb_connection_t* c = canvas->connection;
   xcb_generic_event_t* e;
   while ((e = xcb_wait_for_event(c)))
   {
@@ -173,7 +196,7 @@ void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context)
       case XCB_EXPOSE:
       {
         xcb_expose_event_t* ev = (xcb_expose_event_t*)e;
-        rendering_context->draw_function();
+        draw_function(rendering_context);
         /* printf ("Window %u exposed. Region to be redrawn at location (%d,%d), with dimension (%d,%d)\n",
                 ev->window, ev->x, ev->y, ev->width, ev->height); */
         xcb_flush(c);
@@ -262,19 +285,20 @@ void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context)
   }
 }
 
-void xcbcanvas_set_window_size(canvas_rendering_context_t* rendering_context, int new_width, int new_height)
+void xcbcanvas_set_window_size(xcbcanvas_t* canvas, int new_width, int new_height)
 {
   static uint32_t values[2];
   values[0] = new_width;
   values[1] = new_height;
-  xcb_configure_window(rendering_context->canvas->connection, rendering_context->canvas->window,
+  xcb_configure_window(canvas->connection, canvas->window,
     XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
+  xcb_flush(canvas->connection);
 }
 
-xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering_context)
+xcbcanvas_size_t xcbcanvas_get_window_size(xcbcanvas_t* canvas)
 {
-  xcb_get_geometry_cookie_t cookie = xcb_get_geometry(rendering_context->canvas->connection, rendering_context->canvas->window);
-  xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(rendering_context->canvas->connection, cookie, NULL);
+  xcb_get_geometry_cookie_t cookie = xcb_get_geometry(canvas->connection, canvas->window);
+  xcb_get_geometry_reply_t* reply = xcb_get_geometry_reply(canvas->connection, cookie, NULL);
   xcbcanvas_size_t size;
   size.width = reply->width;
   size.height = reply->height;
@@ -282,12 +306,14 @@ xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering
   return size;
 }
 
-void xcbcanvas_load_font(canvas_rendering_context_t* rendering_context, char* font_name)
+void xcbcanvas_load_font(xcbcanvas_t* canvas, char* font_name)
 {
-  // Open our font and check for errors
-  xcb_font_t font = xcb_generate_id(rendering_context->canvas->connection);
-  xcb_void_cookie_t cookie = xcb_open_font_checked(rendering_context->canvas->connection, font, strlen(font_name), font_name);
-  xcb_generic_error_t* error = xcb_request_check(rendering_context->canvas->connection, cookie);
+  // First, create an id for the font
+  xcb_font_t font = xcb_generate_id(canvas->connection);
+  // Secondly, open the font
+  xcb_void_cookie_t cookie = xcb_open_font_checked(canvas->connection, font, strlen(font_name), font_name);
+  // Check for errors
+  xcb_generic_error_t* error = xcb_request_check(canvas->connection, cookie);
   if (error)
   {
     fprintf(stderr, "Error opening font: %s\n", font_name);
@@ -295,9 +321,10 @@ void xcbcanvas_load_font(canvas_rendering_context_t* rendering_context, char* fo
     return;
   }
 
-  // Assign font to our existing graphic context
-  cookie = xcb_change_gc(rendering_context->canvas->connection, rendering_context->canvas->gc, XCB_GC_FONT, (uint32_t[]) { font });
-  error = xcb_request_check(rendering_context->canvas->connection, cookie);
+  // Then, assign font to our existing graphic context
+  cookie = xcb_change_gc(canvas->connection, canvas->gc, XCB_GC_FONT, (uint32_t[]) { font });
+  // Check for errors
+  error = xcb_request_check(canvas->connection, cookie);
   if (error)
   {
     fprintf(stderr, "Error assigning font to graphic context\n");
@@ -305,161 +332,156 @@ void xcbcanvas_load_font(canvas_rendering_context_t* rendering_context, char* fo
     return;
   }
   // Close the font
-  cookie = xcb_close_font_checked(rendering_context->canvas->connection, font);
-  error = xcb_request_check(rendering_context->canvas->connection, cookie);
+  cookie = xcb_close_font_checked(canvas->connection, font);
+  error = xcb_request_check(canvas->connection, cookie);
   if (error)
   {
     fprintf(stderr, "Error closing font\n");
     free(error);
     return;
   }
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_update_font(canvas_rendering_context_t* rendering_context, xcbcanvas_font_t* font)
+void xcbcanvas_set_window_title(xcbcanvas_t* canvas, char* title)
 {
-  if (font == NULL) {
-    return;
-  }
-  if (font->family != NULL) {
-    rendering_context->font->family = font->family;
-  }
-  if (font->size != 0) {
-    rendering_context->font->size = font->size;
-  }
-  if (font->weight != NULL) {
-    rendering_context->font->weight = font->weight;
-  }
-  rendering_context->font->italic = font->italic;
-  char font_name[255];
-  sprintf(
-    &font_name,
-    "*%s*%s-%s-*--%d-*",
-    rendering_context->font->family,
-    rendering_context->font->weight,
-    rendering_context->font->italic ? "I" : "R",
-    rendering_context->font->size
-  );
-  xcbcanvas_load_font(rendering_context, font_name);
-}
-
-void xcbcanvas_set_window_title(canvas_rendering_context_t* rendering_context, char* title)
-{
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_window_t win = rendering_context->canvas->window;
+  xcb_connection_t* c = canvas->connection;
+  xcb_window_t win = canvas->window;
   xcb_change_property(c, XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME,
     XCB_ATOM_STRING, 8, strlen(title), title);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_set_window_position(canvas_rendering_context_t* rendering_context, int x, int y)
+void xcbcanvas_set_window_position(xcbcanvas_t* canvas, int x, int y)
 {
   static uint32_t values[2];
   values[0] = x;
   values[1] = y;
-  xcb_configure_window(rendering_context->canvas->connection, rendering_context->canvas->window,
+  xcb_configure_window(canvas->connection, canvas->window,
     XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_set_color(canvas_rendering_context_t* rendering_context, uint32_t color)
+void xcbcanvas_set_color(xcbcanvas_t* canvas, uint32_t color)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_change_gc(c, gc, XCB_GC_FOREGROUND, &color);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_set_stroke_width(canvas_rendering_context_t* rendering_context, int width)
+void xcbcanvas_set_stroke_width(xcbcanvas_t* canvas, int width)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_change_gc(c, gc, XCB_GC_LINE_WIDTH, &width);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_stroke_rectangle(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height)
+void xcbcanvas_stroke_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_rectangle_t rectangle;
   rectangle.x = x;
   rectangle.y = y;
   rectangle.width = width;
   rectangle.height = height;
-  xcb_poly_rectangle(c, rendering_context->canvas->window, gc, 1, &rectangle);
+  xcb_poly_rectangle(c, canvas->window, gc, 1, &rectangle);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_fill_rectangle(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height)
+void xcbcanvas_fill_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_rectangle_t rectangle;
   rectangle.x = x;
   rectangle.y = y;
   rectangle.width = width;
   rectangle.height = height;
-  xcb_poly_fill_rectangle(c, rendering_context->canvas->window, gc, 1, &rectangle);
+  xcb_poly_fill_rectangle(c, canvas->window, gc, 1, &rectangle);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_draw_text(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, const char* text)
+void xcbcanvas_draw_text(xcbcanvas_t* canvas, int16_t x, int16_t y, const char* text)
 {
+  // Draw the text to the screen with the font that has been set
   xcb_void_cookie_t cookie_text = xcb_image_text_8_checked(
-    rendering_context->canvas->connection,
+    canvas->connection,
     strlen(text),
-    rendering_context->canvas->window,
-    rendering_context->canvas->gc,
+    canvas->window,
+    canvas->gc,
     x,
     y,
     text
   );
-  xcb_generic_error_t* error = xcb_request_check(rendering_context->canvas->connection, cookie_text);
+  xcb_generic_error_t* error = xcb_request_check(canvas->connection, cookie_text);
   if (error) {
     fprintf(stderr, "Error: Can't paste text: %d\n", error->error_code);
     free(error);
   }
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+void xcbcanvas_line(xcbcanvas_t* canvas, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_point_t points[2];
   points[0].x = x1;
   points[0].y = y1;
   points[1].x = x2;
   points[1].y = y2;
-  xcb_poly_line(c, XCB_COORD_MODE_ORIGIN, rendering_context->canvas->window, gc, 2, points);
+  xcb_poly_line(c, XCB_COORD_MODE_ORIGIN, canvas->window, gc, 2, points);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
+void xcbcanvas_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_arc_t arc;
-  arc.x = x;
-  arc.y = y;
+  arc.x = x - width / 2;
+  arc.y = y - height / 2;
   arc.width = width;
   arc.height = height;
   arc.angle1 = angle1;
   arc.angle2 = angle2;
-  xcb_poly_arc(c, rendering_context->canvas->window, gc, 1, &arc);
+  xcb_poly_arc(c, canvas->window, gc, 1, &arc);
+  xcb_flush(canvas->connection);
 }
 
-void xcbcanvas_fill_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
+void xcbcanvas_fill_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, uint16_t height, int16_t angle1, int16_t angle2)
 {
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_gcontext_t gc = rendering_context->canvas->gc;
+  xcb_connection_t* c = canvas->connection;
+  xcb_gcontext_t gc = canvas->gc;
   xcb_arc_t arc;
-  arc.x = x;
-  arc.y = y;
+  arc.x = x - width / 2;
+  arc.y = y - height / 2;
   arc.width = width;
   arc.height = height;
   arc.angle1 = angle1;
   arc.angle2 = angle2;
-  xcb_poly_fill_arc(c, rendering_context->canvas->window, gc, 1, &arc);
+  xcb_poly_fill_arc(c, canvas->window, gc, 1, &arc);
+  xcb_flush(canvas->connection);
 }
 
-#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
-void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
+//#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
+void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
 {
 
-  if (rendering_context->path->sub_path_count == 0) {
+  if (path == NULL) {
+    printf("Error: Canvas path is NULL\n");
+    return;
+  }
+
+  if (path->sub_paths == NULL) {
+    printf("Error: Sub-paths is NULL\n");
+    return;
+  }
+
+  if (path->sub_path_count == 0) {
     printf("Error: No sub-paths in path\n");
     return;
   }
@@ -467,106 +489,119 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
   /*  Technically valid, but would do nothing
       since the first sub-path is treated as just a move to.
   */
-  if (rendering_context->path->sub_path_count == 1) return;
+  if (path->sub_path_count == 1) {
+    printf("Warning: Only one sub-path in path\n");
+    return;
+  }
 
   /* Render a outline path */
-  xcb_point_t current_position = rendering_context->path->sub_paths[0].point;
-  xcb_point_t closing_point = rendering_context->path->sub_paths[0].point;
-  xcb_point_t points[rendering_context->path->sub_path_count + 1];
+  xcb_point_t current_position = path->sub_paths[0].point;
+  xcb_point_t closing_point = path->sub_paths[0].point;
+  /* Keep track of all the points that make up the shape that would need to be closed */
+  xcb_point_t points[path->sub_path_count + 1];
   points[0] = current_position;
   uint16_t moves_since_close = 0;
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
-  printf("Path: %d sub-paths\n", rendering_context->path->sub_path_count);
+  printf("Path: %d sub-paths\n", path->sub_path_count);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
-  if (!rendering_context->path->filled) {
-    for (int i = 0; i < rendering_context->path->sub_path_count; i++) {
+  if (!path->filled) {
+    for (int i = 0; i < path->sub_path_count; i++) {
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
       printf("Current position: %d, %d\n", current_position.x, current_position.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
-      switch (rendering_context->path->sub_paths[i].type) {
+      switch (path->sub_paths[i].type) {
         case SUBPATH_TYPE_MOVE:
-          current_position = rendering_context->path->sub_paths[i].point;
+          /* Move pen to the given position */
+          current_position = path->sub_paths[i].point;
+          /* Add the point to the list of points that need to be closed */
           if (moves_since_close > 1) points[moves_since_close + 1] = closing_point;
+          /* Reset moves since close counter */
           moves_since_close = 0;
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Move to: %d, %d\n", i, current_position.x, current_position.y);
-
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           break;
         case SUBPATH_TYPE_LINE:
+          /* Draw line between current position and the given one */
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
-          printf("#%d: Line to: %d, %d\n", i, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+          printf("#%d: Line to: %d, %d\n", i, path->sub_paths[i].point.x, path->sub_paths[i].point.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
-          xcbcanvas_line(rendering_context, current_position.x, current_position.y, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
-          current_position = rendering_context->path->sub_paths[i].point;
+          xcbcanvas_line(canvas, current_position.x, current_position.y, path->sub_paths[i].point.x, path->sub_paths[i].point.y);
+          /* Update currrent position */
+          current_position = path->sub_paths[i].point;
           points[++moves_since_close] = current_position;
           break;
         case SUBPATH_TYPE_ARC:
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Arc: %d, %d, %d, %d, %d, %d\n",
             i,
-            rendering_context->path->sub_paths[i].point.x,
-            rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y << 6);
+            path->sub_paths[i].point.x,
+            path->sub_paths[i].point.y,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
+            path->sub_paths[i].arc.end_radius_or_cp2_y << 6);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
-          xcbcanvas_arc(rendering_context,
-            rendering_context->path->sub_paths[i].point.x,
-            rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y);
+          xcbcanvas_arc(canvas,
+            path->sub_paths[i].point.x,
+            path->sub_paths[i].point.y,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.start_radius_or_cp2_x,
+            path->sub_paths[i].arc.end_radius_or_cp2_y);
           break;
         case SUBPATH_TYPE_ARC_TO:
         case SUBPATH_TYPE_QUADRATIC_CURVE:
         case SUBPATH_TYPE_CUBIC_CURVE:
-          printf("Error: Unsupported path sub-path type: %d\n", rendering_context->path->sub_paths[i].type);
+          printf("Error: Unsupported path sub-path type: %d\n", path->sub_paths[i].type);
           break;
         case SUBPATH_TYPE_CLOSE:
+          /* Close the shape */
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Close (%d, %d)\n", i, closing_point.x, closing_point.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           if (moves_since_close > 1) points[moves_since_close + 1] = closing_point;
-          xcbcanvas_line(rendering_context, current_position.x, current_position.y, closing_point.x, closing_point.y);
-          current_position = rendering_context->path->sub_paths[0].point;
+          xcbcanvas_line(canvas, current_position.x, current_position.y, closing_point.x, closing_point.y);
+          current_position = path->sub_paths[0].point;
           break;
       }
     }
   }
   /* Render a filled path */
   else {
-    for (int i = 0; i < rendering_context->path->sub_path_count; i++) {
+    /*  Same as above, but with a filled variants.
+    *   When closing a shape, also need to make sure
+    *   to correctly fill the shape.
+    */
+    for (int i = 0; i < path->sub_path_count; i++) {
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
       printf("Current position: %d, %d\n", current_position.x, current_position.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
-      switch (rendering_context->path->sub_paths[i].type) {
+      switch (path->sub_paths[i].type) {
         case SUBPATH_TYPE_MOVE:
           if (moves_since_close > 1) {
             points[++moves_since_close] = closing_point;
             xcb_fill_poly(
-              rendering_context->canvas->connection,
-              rendering_context->canvas->window,
-              rendering_context->canvas->gc,
+              canvas->connection,
+              canvas->window,
+              canvas->gc,
               XCB_POLY_SHAPE_COMPLEX,
               XCB_COORD_MODE_ORIGIN,
               moves_since_close,
               points);
           }
           moves_since_close = 0;
-          current_position = rendering_context->path->sub_paths[i].point;
+          current_position = path->sub_paths[i].point;
           closing_point = current_position;
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
-          printf("#%d: Move to: %d, %d\n", i, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+          printf("#%d: Move to: %d, %d\n", i, path->sub_paths[i].point.x, path->sub_paths[i].point.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           break;
         case SUBPATH_TYPE_LINE:
-          current_position = rendering_context->path->sub_paths[i].point;
+          current_position = path->sub_paths[i].point;
           points[++moves_since_close] = current_position;
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
-          printf("#%d:\tLine to: %d, %d\n", i, rendering_context->path->sub_paths[i].point.x, rendering_context->path->sub_paths[i].point.y);
+          printf("#%d:\tLine to: %d, %d\n", i, path->sub_paths[i].point.x, path->sub_paths[i].point.y);
           printf("\tMoves since close: %d\n", moves_since_close);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           break;
@@ -574,40 +609,40 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Arc: %d, %d, %d, %d, %d, %d\n",
             i,
-            rendering_context->path->sub_paths[i].point.x,
-            rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y << 6);
+            path->sub_paths[i].point.x,
+            path->sub_paths[i].point.y,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
+            path->sub_paths[i].arc.end_radius_or_cp2_y << 6);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
-          xcbcanvas_fill_arc(rendering_context,
-            rendering_context->path->sub_paths[i].point.x,
-            rendering_context->path->sub_paths[i].point.y,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.radius * 2,
-            rendering_context->path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
-            rendering_context->path->sub_paths[i].arc.end_radius_or_cp2_y << 6
+          xcbcanvas_fill_arc(canvas,
+            path->sub_paths[i].point.x,
+            path->sub_paths[i].point.y,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.radius * 2,
+            path->sub_paths[i].arc.start_radius_or_cp2_x << 6,
+            path->sub_paths[i].arc.end_radius_or_cp2_y << 6
           );
           break;
         case SUBPATH_TYPE_ARC_TO:
         case SUBPATH_TYPE_QUADRATIC_CURVE:
         case SUBPATH_TYPE_CUBIC_CURVE:
-          printf("Error: Unsupported path sub-path type: %d\n", rendering_context->path->sub_paths[i].type);
+          printf("Error: Unsupported path sub-path type: %d\n", path->sub_paths[i].type);
           break;
         case SUBPATH_TYPE_CLOSE:
           if (moves_since_close > 1) {
             points[++moves_since_close] = closing_point;
             xcb_fill_poly(
-              rendering_context->canvas->connection,
-              rendering_context->canvas->window,
-              rendering_context->canvas->gc,
+              canvas->connection,
+              canvas->window,
+              canvas->gc,
               XCB_POLY_SHAPE_COMPLEX,
               XCB_COORD_MODE_ORIGIN,
               moves_since_close,
               points);
           }
-          current_position = rendering_context->path->sub_paths[0].point;
+          current_position = path->sub_paths[0].point;
           moves_since_close = 0;
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Close (%d, %d)\n", i, closing_point.x, closing_point.y);
@@ -619,4 +654,6 @@ void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context)
       }
     }
   }
+
+  xcb_flush(canvas->connection);
 }

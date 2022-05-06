@@ -3,17 +3,13 @@
     {
       "name": "linux-gcc-x64",
       "includePath": [
-        "${workspaceFolder}/include/*"
+        "${workspaceFolder}/**"
       ],
       "compilerPath": "/bin/gcc",
       "cStandard": "${default}",
       "cppStandard": "${default}",
       "intelliSenseMode": "linux-gcc-x64",
-      "compilerArgs": [
-        "-Wall",
-        "-Wextra",
-        "-Wpedantic"
-      ]
+      "compilerArgs": []
     }
   ],
   "version": 4
