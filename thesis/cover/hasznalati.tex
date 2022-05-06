@@ -1,0 +1,27 @@
+\pagestyle{empty}
+
+\noindent \textbf{\Large CD Használati útmutató}
+
+\vskip 1cm
+
+% A CD lemezre mindenképpen rá kell tenni
+% \begin{itemize}
+% \item a dolgozatot egy \texttt{dolgozat.pdf} fájl formájában,
+% \item a LaTeX forráskódját a dolgozatnak,
+% \item az elkészített programot, fontosabb futási eredményeket (például ha kép a kimenet),
+% \item egy útmutatót a CD használatához (ami lehet ez a fejezet külön PDF-be vagy MarkDown fájlként kimentve).
+% \end{itemize}
+
+A fordításhoz Ubuntun a a szükséges csomagok letöltéséhez az alábbi parancsot kell kiadni: \texttt{sudo apt install build-essential libx11-xcb-dev pkg-config} . Ezután \texttt{cmocka}-t kell telepíteni, aminek a módja elolvasható \ref{sec:cmocka-install}. szakaszban. Végül a példa program elkészítéséhez a \texttt{make example} parancs kiadása után a \texttt{example} programot kell futattni a megjelent \texttt{build} jegyzékben.
+
+Amennyiben Windows 10 vagy Windows 11-en vagyunk WSL-t telepítenünk kell, majd WSL-ben Ubuntu-t telepíteni és a fenti utasításokat követni\cite{wsl-install}. Továbbá Windows 10-en grafikus program megjelenítéséhez VcXsrv telepítéséhez és felállításához is szükség van\cite{vcxsrv-setup}. Windows 11-en tudtommal már lehet grafikus Linux programokat futtatni WSL segítségével, de nem teszteltem.
+
+A CD-n található jegyzékek:
+\begin{itemize}
+    \item .vscode/ -- a VsCode fejlesztő környezet beállításait tartalmazó jegyzék
+    \item include/ -- a header fájlokat tartalmazó jegyzék
+    \item src/ -- a forráskódot tartalmazó jegyzék
+    \item tests/ -- az egységteszteket tartalmazó jegyzék
+    \item build/ -- ebben a jegyzékbe lesz létrehozva a futtatható tartomány és a keretrendszer függvénykönyvtár
+    \item thesis/ -- ebben a jegyzék található a szakdolgozat LaTeX kódja és PDF fájlja.
+\end{itemize}
