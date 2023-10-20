@@ -307,9 +307,11 @@ xcbcanvas_size_t xcbcanvas_get_window_size(xcbcanvas_t* canvas)
 
 void xcbcanvas_load_font(xcbcanvas_t* canvas, char* font_name)
 {
-  // Open our font and check for errors
+  // First, create an id for the font
   xcb_font_t font = xcb_generate_id(canvas->connection);
+  // Secondly, open the font
   xcb_void_cookie_t cookie = xcb_open_font_checked(canvas->connection, font, strlen(font_name), font_name);
+  // Check for errors
   xcb_generic_error_t* error = xcb_request_check(canvas->connection, cookie);
   if (error)
   {
@@ -318,8 +320,9 @@ void xcbcanvas_load_font(xcbcanvas_t* canvas, char* font_name)
     return;
   }
 
-  // Assign font to our existing graphic context
+  // Then, assign font to our existing graphic context
   cookie = xcb_change_gc(canvas->connection, canvas->gc, XCB_GC_FONT, (uint32_t[]) { font });
+  // Check for errors
   error = xcb_request_check(canvas->connection, cookie);
   if (error)
   {
@@ -395,6 +398,7 @@ void xcbcanvas_fill_rectangle(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_
 
 void xcbcanvas_draw_text(xcbcanvas_t* canvas, int16_t x, int16_t y, const char* text)
 {
+  // Draw the text to the screen with the font that has been set
   xcb_void_cookie_t cookie_text = xcb_image_text_8_checked(
     canvas->connection,
     strlen(text),
@@ -481,6 +485,7 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
   /* Render a outline path */
   xcb_point_t current_position = path->sub_paths[0].point;
   xcb_point_t closing_point = path->sub_paths[0].point;
+  /* Keep track of all the points that make up the shape that would need to be closed */
   xcb_point_t points[path->sub_path_count + 1];
   points[0] = current_position;
   uint16_t moves_since_close = 0;
@@ -494,19 +499,23 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
       switch (path->sub_paths[i].type) {
         case SUBPATH_TYPE_MOVE:
+          /* Move pen to the given position */
           current_position = path->sub_paths[i].point;
+          /* Add the point to the list of points that need to be closed */
           if (moves_since_close > 1) points[moves_since_close + 1] = closing_point;
+          /* Reset moves since close counter */
           moves_since_close = 0;
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Move to: %d, %d\n", i, current_position.x, current_position.y);
-
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           break;
         case SUBPATH_TYPE_LINE:
+          /* Draw line between current position and the given one */
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Line to: %d, %d\n", i, path->sub_paths[i].point.x, path->sub_paths[i].point.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
           xcbcanvas_line(canvas, current_position.x, current_position.y, path->sub_paths[i].point.x, path->sub_paths[i].point.y);
+          /* Update currrent position */
           current_position = path->sub_paths[i].point;
           points[++moves_since_close] = current_position;
           break;
@@ -535,6 +544,7 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
           printf("Error: Unsupported path sub-path type: %d\n", path->sub_paths[i].type);
           break;
         case SUBPATH_TYPE_CLOSE:
+        /* Close the shape */
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
           printf("#%d: Close (%d, %d)\n", i, closing_point.x, closing_point.y);
 #endif // XCBCANVAS_DEBUG_DRAW_PATH
@@ -547,6 +557,10 @@ void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
   }
   /* Render a filled path */
   else {
+    /*  Same as above, but with a filled variants.
+    *   When closing a shape, also need to make sure
+    *   to correctly fill the shape.
+    */
     for (int i = 0; i < path->sub_path_count; i++) {
 #ifdef XCBCANVAS_DEBUG_DRAW_PATH
       printf("Current position: %d, %d\n", current_position.x, current_position.y);
