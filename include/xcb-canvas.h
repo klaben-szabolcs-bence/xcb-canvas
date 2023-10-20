@@ -7,9 +7,12 @@
 
 #include <xcb/xcb.h>
 
+#ifndef XCBCANVAS_ENCAP_TYPES_IN_H
+#define XCBCANVAS_ENCAP_TYPES_IN_H
 typedef struct arc_t arc_t; // The rest of the data needed to draw an arc.
 typedef enum sub_path_type_t sub_path_type_t;
 typedef struct sub_path_t sub_path_t;
+#endif /* XCBCANVAS_ENCAP_TYPES_IN_H */
 
 #ifndef XCBCANVAS_SIZE_T
 #define XCBCANVAS_SIZE_T
@@ -22,11 +25,14 @@ typedef struct xcbcanvas_size_t {
 typedef struct xcbcanvas_t xcbcanvas_t;
 typedef struct canvas_rendering_context_t canvas_rendering_context_t;
 
+#ifndef XCBCANVAS_PATH_T
+#define XCBCANVAS_PATH_T
 typedef struct path_t {
     sub_path_t* sub_paths; // An array of sub paths. Should be allocated in chunks of 10.
     int sub_path_count;
     _Bool filled;
 } path_t;
+#endif /* XCBCANVAS_PATH_T */
 
 /* Prints pressed modifier keys */
 void xcbcanvas_print_modifiers(uint32_t mask);
