@@ -3,6 +3,7 @@
         "ms-vscode.cpptools",
         "ms-vscode-remote.remote-wsl",
         "cschlosser.doxdocgen",
-        "christian-kohler.path-intellisense"
+        "christian-kohler.path-intellisense",
+        "coolchyni.beyond-debug"
     ]
 }
