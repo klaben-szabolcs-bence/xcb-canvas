@@ -56,4 +56,5 @@ void canvas_draw_text(
     const char* text
 );
 
+
 #endif /* CANVAS_H */
