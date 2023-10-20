@@ -152,7 +152,7 @@ void canvas_line_to(
  * @param radius            The radius of the arc.
  * @param start_angle       The start angle of the arc in 1/64 of a degree.
  * @param end_angle         The end angle of the arc in 1/64 of a degree.
- * @param anticlockwise     Whether the arc should be drawn in anticlockwise
+ * @param clockwise     Whether the arc should be drawn in clockwise.
  *
  * @note To get the correct angles, use the following formula: angle << 6.
  */
@@ -161,7 +161,7 @@ void canvas_arc(
     int16_t x, int16_t y,
     uint16_t radius,
     uint16_t start_angle, uint16_t end_angle,
-    _Bool anticlockwise
+    _Bool clockwise
 );
 
 /**

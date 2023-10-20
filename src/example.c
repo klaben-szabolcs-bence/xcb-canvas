@@ -30,4 +30,11 @@ void draw()
     canvas_line_to(&rendering_context, 300, 300);
     canvas_close_path(&rendering_context);
     canvas_fill(&rendering_context);
+
+    /* Draw a green circle */
+    canvas_set_color(&rendering_context, 0, 255, 0);
+    canvas_set_line_width(&rendering_context, 10);
+    canvas_begin_path(&rendering_context);
+    canvas_arc(&rendering_context, 300, 300, 100, 0, 360, 0);
+    canvas_fill(&rendering_context);
 }
