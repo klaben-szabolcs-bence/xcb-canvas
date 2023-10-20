@@ -411,8 +411,8 @@ void xcbcanvas_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t width, ui
   xcb_connection_t* c = canvas->connection;
   xcb_gcontext_t gc = canvas->gc;
   xcb_arc_t arc;
-  arc.x = x;
-  arc.y = y;
+  arc.x = x - width / 2;
+  arc.y = y - height / 2;
   arc.width = width;
   arc.height = height;
   arc.angle1 = angle1;
@@ -425,8 +425,8 @@ void xcbcanvas_fill_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t widt
   xcb_connection_t* c = canvas->connection;
   xcb_gcontext_t gc = canvas->gc;
   xcb_arc_t arc;
-  arc.x = x;
-  arc.y = y;
+  arc.x = x - width / 2;
+  arc.y = y - height / 2;
   arc.width = width;
   arc.height = height;
   arc.angle1 = angle1;
