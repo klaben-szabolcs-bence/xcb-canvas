@@ -3,8 +3,12 @@ STD:=-std=c18
 INCLUDE:=-Iinclude/
 OUTPUT_FOLDER:=build
 
-example: lib
+example: tests
 	$(CC) $(STD) $(INCLUDE) -Wall src/example.c -o $(OUTPUT_FOLDER)/example $(OUTPUT_FOLDER)/lib-xcb-canvas.a `pkg-config --cflags --libs xcb`
+
+tests: lib
+	$(CC) $(STD) $(INCLUDE) -Wall tests/* -o $(OUTPUT_FOLDER)/tests $(OUTPUT_FOLDER)/lib-xcb-canvas.a `pkg-config --cflags --libs xcb cmocka`; \
+	./$(OUTPUT_FOLDER)/tests
 
 lib: clean xcb-canvas.o canvas.o
 	cd $(OUTPUT_FOLDER); \
