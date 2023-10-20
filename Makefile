@@ -1,5 +1,5 @@
 CC:=gcc
-STD:=-std=c18
+STD:=-std=gnu99
 INCLUDE:=-Iinclude/
 OUTPUT_FOLDER:=build
 PKG_CONF:=pkg-config --cflags --libs

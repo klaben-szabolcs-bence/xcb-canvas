@@ -49,6 +49,7 @@ void xcbcanvas_print_modifiers(uint32_t mask)
   putchar('\n');
 }
 
+//#define XCBCANVAS_INIT_XCB_DEBUG //uncomment to debug the function below
 xcbcanvas_t* xcbcanvas_init_xcb()
 {
   xcb_connection_t* c;
@@ -67,7 +68,9 @@ xcbcanvas_t* xcbcanvas_init_xcb()
     exit(-1);
   }
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Connected to the X server\n");
+#endif
 
   /* Get the first screen */
   screen = xcb_setup_roots_iterator(xcb_get_setup(c)).data;
@@ -78,7 +81,9 @@ xcbcanvas_t* xcbcanvas_init_xcb()
     exit(-1);
   }
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Screen: %d\n", screen->root);
+#endif
 
   /* Create black (foreground) and white (background) colors */
   gc = xcb_generate_id(c);
@@ -97,7 +102,9 @@ xcbcanvas_t* xcbcanvas_init_xcb()
     exit(-1);
   }
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Window id: %d\n", win);
+#endif
 
   /* Create the window */
   mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -123,7 +130,9 @@ xcbcanvas_t* xcbcanvas_init_xcb()
     exit(-1);
   }
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Window created\n");
+#endif
 
   xcb_void_cookie_t cookie = xcb_change_property_checked(c,
     XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
@@ -136,7 +145,9 @@ xcbcanvas_t* xcbcanvas_init_xcb()
     exit(-1);
   }
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Window title changed\n");
+#endif
 
   /* Map the window on the screen */
   xcb_map_window(c, win);
@@ -147,11 +158,15 @@ xcbcanvas_t* xcbcanvas_init_xcb()
     exit(-1);
   }
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Window mapped\n");
+#endif
 
   xcb_flush(c);
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("Flushed\n");
+#endif
 
   xcbcanvas_t* xcbcanvas = malloc(sizeof(xcbcanvas_t));
   xcbcanvas->connection = c;
@@ -159,7 +174,9 @@ xcbcanvas_t* xcbcanvas_init_xcb()
   xcbcanvas->window = win;
   xcbcanvas->gc = gc;
 
+#ifdef XCBCANVAS_INIT_XCB_DEBUG
   printf("XCB canvas initialized\n");
+#endif
 
   return xcbcanvas;
 }
@@ -434,7 +451,7 @@ void xcbcanvas_fill_arc(xcbcanvas_t* canvas, int16_t x, int16_t y, uint16_t widt
   xcb_poly_fill_arc(c, canvas->window, gc, 1, &arc);
 }
 
-#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
+//#define XCBCANVAS_DEBUG_DRAW_PATH // uncomment to debug path drawing
 void xcbcanvas_draw_path(xcbcanvas_t* canvas, path_t* path)
 {
 
