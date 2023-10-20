@@ -9,6 +9,7 @@
 
 #ifndef XCBCANVAS_SIZE_T
 #define XCBCANVAS_SIZE_T
+
 typedef struct xcbcanvas_size_t {
     int width;
     int height;
@@ -17,11 +18,19 @@ typedef struct xcbcanvas_size_t {
 
 typedef struct xcbcanvas_t xcbcanvas_t;
 
+typedef struct path_t {
+    sub_path_t* sub_paths; // An array of sub paths. Should be allocated in chunks of 10.
+    int sub_path_count;
+    _Bool filled;
+} path_t;
+
 typedef struct canvas_rendering_context_t {
     xcbcanvas_t* canvas;
     uint32_t fillColor;
     uint32_t strokeColor;
     void (*draw_function) ();
+    path_t* path;
+
 } canvas_rendering_context_t;
 
 /* Prints pressed modifier keys */
@@ -35,9 +44,6 @@ void xcbcanvas_set_window_size(canvas_rendering_context_t* rendering_context, in
 
 /* Get size of window */
 xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering_context);
-
-/* Set the draw function */
-void xcbcanvas_set_draw_function(canvas_rendering_context_t* rendering_context, void (*draw_function) ());
 
 /* Handle the event loop of the main program */
 void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context);
@@ -59,5 +65,14 @@ void xcbcanvas_fill_rectangle(canvas_rendering_context_t* rendering_context, int
 
 /* Draw text */
 void xcbcanvas_draw_text(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, const char* text);
+
+/* Draw a line */
+void xcbcanvas_line(canvas_rendering_context_t* rendering_context, int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+
+/* Draw an arc */
+void xcbcanvas_arc(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t angle1, uint16_t angle2);
+
+/* Draw the stored path */
+void xcbcanvas_draw_path(canvas_rendering_context_t* rendering_context);
 
 #endif /* XCB_CANVAS_H */
