@@ -21,6 +21,13 @@ typedef struct xcbcanvas_size_t {
 
 typedef struct xcbcanvas_t xcbcanvas_t;
 
+typedef struct xcbcanvas_font_t {
+    char* family;
+    uint32_t size;
+    char* weight;
+    _Bool italic;
+} xcbcanvas_font_t;
+
 typedef struct path_t {
     sub_path_t* sub_paths; // An array of sub paths. Should be allocated in chunks of 10.
     int sub_path_count;
@@ -33,7 +40,7 @@ typedef struct canvas_rendering_context_t {
     uint32_t strokeColor;
     void (*draw_function) ();
     path_t* path;
-
+    xcbcanvas_font_t* font;
 } canvas_rendering_context_t;
 
 /* Prints pressed modifier keys */
@@ -52,7 +59,10 @@ xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering
 void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context);
 
 /* Handle font loading */
-xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_name);
+void xcbcanvas_load_font(canvas_rendering_context_t* rendering_context, char* font_name);
+
+/* Update font */
+void xcbcanvas_update_font(canvas_rendering_context_t* rendering_context, xcbcanvas_font_t* font);
 
 /* Set the color used for drawing */
 void xcbcanvas_set_color(canvas_rendering_context_t* rendering_context, uint32_t color);

@@ -76,9 +76,10 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
 
   /* Create black (foreground) and white (background) colors */
   gc = xcb_generate_id(c);
-  mask = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES;
+  mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND | XCB_GC_GRAPHICS_EXPOSURES;
   values[0] = screen->black_pixel;
-  values[1] = 0;
+  values[1] = screen->white_pixel;
+  values[2] = 0;
   xcb_create_gc(c, gc, screen->root, mask, values);
 
   /* Ask for our window's Id */
@@ -123,7 +124,6 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
     return -1;
   }
 
-
   xcb_flush(c);
 
   xcbcanvas_t* xcbcanvas = malloc(sizeof(xcbcanvas_t));
@@ -136,6 +136,15 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
 
   path_t* path = malloc(sizeof(path_t));
   rendering_context->path = path;
+
+  rendering_context->font = malloc(sizeof(xcbcanvas_font_t));
+
+  xcbcanvas_font_t font;
+  font.family = "Times";
+  font.size = 12;
+  font.weight = "Medium";
+  font.italic = 0;
+  xcbcanvas_update_font(rendering_context, &font);
 
   xcbcanvas_handle_events(rendering_context);
 
@@ -262,58 +271,64 @@ xcbcanvas_size_t xcbcanvas_get_window_size(canvas_rendering_context_t* rendering
   return size;
 }
 
-xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_name)
+void xcbcanvas_load_font(canvas_rendering_context_t* rendering_context, char* font_name)
 {
-
-  uint32_t value_list[3];
-  xcb_void_cookie_t cookie_font;
-  xcb_void_cookie_t cookie_gc;
-  xcb_generic_error_t* error;
-  xcb_font_t font;
-  xcb_gcontext_t gc;
-  uint32_t mask;
-
-  xcb_connection_t* c = rendering_context->canvas->connection;
-  xcb_screen_t* screen = rendering_context->canvas->screen;
-  xcb_window_t win = rendering_context->canvas->window;
-
-  font = xcb_generate_id(c);
-  cookie_font = xcb_open_font_checked(c, font,
-    strlen(font_name),
-    font_name);
-
-  error = xcb_request_check(c, cookie_font);
+  // Open our font and check for errors
+  xcb_font_t font = xcb_generate_id(rendering_context->canvas->connection);
+  xcb_void_cookie_t cookie = xcb_open_font_checked(rendering_context->canvas->connection, font, strlen(font_name), font_name);
+  xcb_generic_error_t* error = xcb_request_check(rendering_context->canvas->connection, cookie);
   if (error)
   {
-    fprintf(stderr, "ERROR: can't open font : %d\n", error->error_code);
-    xcb_disconnect(c);
-    exit(-1);
+    fprintf(stderr, "Error opening font: %s\n", font_name);
+    free(error);
+    return;
   }
 
-  gc = xcb_generate_id(c);
-  mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND | XCB_GC_FONT;
-  value_list[0] = screen->black_pixel;
-  value_list[1] = screen->white_pixel;
-  value_list[2] = font;
-  cookie_gc = xcb_create_gc_checked(c, gc, win, mask, value_list);
-  error = xcb_request_check(c, cookie_gc);
+  // Assign font to our existing graphic context
+  cookie = xcb_change_gc(rendering_context->canvas->connection, rendering_context->canvas->gc, XCB_GC_FONT, (uint32_t[]) { font });
+  error = xcb_request_check(rendering_context->canvas->connection, cookie);
   if (error)
   {
-    fprintf(stderr, "ERROR: can't create gc : %d\n", error->error_code);
-    xcb_disconnect(c);
-    exit(-1);
+    fprintf(stderr, "Error assigning font to graphic context\n");
+    free(error);
+    return;
   }
-
-  cookie_font = xcb_close_font_checked(c, font);
-  error = xcb_request_check(c, cookie_font);
+  // Close the font
+  cookie = xcb_close_font_checked(rendering_context->canvas->connection, font);
+  error = xcb_request_check(rendering_context->canvas->connection, cookie);
   if (error)
   {
-    fprintf(stderr, "ERROR: can't close font : %d\n", error->error_code);
-    xcb_disconnect(c);
-    exit(-1);
+    fprintf(stderr, "Error closing font\n");
+    free(error);
+    return;
   }
+}
 
-  return (xcb_gc_t)gc;
+void xcbcanvas_update_font(canvas_rendering_context_t* rendering_context, xcbcanvas_font_t* font)
+{
+  if (font == NULL) {
+    return;
+  }
+  if (font->family != NULL) {
+    rendering_context->font->family = font->family;
+  }
+  if (font->size != 0) {
+    rendering_context->font->size = font->size;
+  }
+  if (font->weight != NULL) {
+    rendering_context->font->weight = font->weight;
+  }
+  rendering_context->font->italic = font->italic;
+  char font_name[255];
+  sprintf(
+    &font_name,
+    "*%s*%s-%s-*--%d-*",
+    rendering_context->font->family,
+    rendering_context->font->weight,
+    rendering_context->font->italic ? "I" : "R",
+    rendering_context->font->size
+  );
+  xcbcanvas_load_font(rendering_context, font_name);
 }
 
 void xcbcanvas_set_window_title(canvas_rendering_context_t* rendering_context, char* title)
@@ -373,23 +388,16 @@ void xcbcanvas_fill_rectangle(canvas_rendering_context_t* rendering_context, int
 
 void xcbcanvas_draw_text(canvas_rendering_context_t* rendering_context, int16_t x, int16_t y, const char* text)
 {
-  xcb_void_cookie_t       cookie_gc;
-  xcb_void_cookie_t       cookie_text;
-  xcb_generic_error_t* error;
-  xcb_gcontext_t          gc;
-  uint8_t                 length;
-  length = strlen(text);
-  gc = gc_font_get(rendering_context, "7x13");
-  cookie_text = xcb_image_text_8_checked(
+  xcb_void_cookie_t cookie_text = xcb_image_text_8_checked(
     rendering_context->canvas->connection,
-    length,
+    strlen(text),
     rendering_context->canvas->window,
     rendering_context->canvas->gc,
     x,
     y,
     text
   );
-  error = xcb_request_check(rendering_context->canvas->connection, cookie_text);
+  xcb_generic_error_t* error = xcb_request_check(rendering_context->canvas->connection, cookie_text);
   if (error) {
     fprintf(stderr, "Error: Can't paste text: %d\n", error->error_code);
     free(error);
