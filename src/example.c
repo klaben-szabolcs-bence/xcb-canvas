@@ -2,5 +2,5 @@
 
 int main ()
 {
-    init_canvas ();
+    init_canvas(&rendering_context);
 }

@@ -4,6 +4,8 @@
 #include "xcb-canvas.h"
 
 /* Initializes the canvas */
-void init_canvas();
+void init_canvas(RenderingContext* rendering_context);
+
+
 
 #endif /* CANVAS_H */
