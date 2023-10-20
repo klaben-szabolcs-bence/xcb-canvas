@@ -2,12 +2,13 @@
 
 int main()
 {
+    xcbcanvas_set_draw_function(&rendering_context, draw);
+    
     if (!canvas_init(&rendering_context))
     {
         printf("Error initialising canvas\n");
         return 1;
     }
-    xcbcanvas_set_draw_function(&rendering_context, draw);
 }
 
 void draw()
