@@ -1,4 +1,4 @@
-#include "main.h"
+#include "xcb-canvas.h"
 
 void print_modifiers (uint32_t mask)
 {
@@ -14,7 +14,7 @@ void print_modifiers (uint32_t mask)
   putchar ('\n');
 }
 
-int main ()
+int init_xcb ()
 {
   xcb_connection_t    *c;
   xcb_screen_t        *screen;
