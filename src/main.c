@@ -4,13 +4,13 @@ void print_modifiers (uint32_t mask)
 {
   const char **mod, *mods[] = {
     "Shift", "Lock", "Ctrl", "Alt",
-    "Mod2", "Mod3", "Mod4", "Mod5",
+    "NumLock", "AltGr", "Win", "ScrollLock",
     "Button1", "Button2", "Button3", "Button4", "Button5"
   };
   printf ("Modifier mask: ");
   for (mod = mods ; mask; mask >>= 1, mod++)
     if (mask & 1)
-      printf(*mod);
+      printf("%s+", *mod);
   putchar ('\n');
 }
 
