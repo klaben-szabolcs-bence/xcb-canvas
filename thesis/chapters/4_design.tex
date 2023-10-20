@@ -1,0 +1,153 @@
+\Chapter{Tervezés}
+
+A fejezet részletesen bemutatja a HTML5 Canvas API C-s implementációjának tervezési folyamatát. Ebben bemutatásra kerülnek az objektum orientált szemlélet szerint felbontott elemek, melyeknek C nyelv esetében a struktúrák és a hozzájuk tartozó függvények felelnek meg.
+
+\Section{Áttekintés}
+
+A keretrendszernek képesnek kell lennie
+\begin{itemize}
+    \item a képernyőre rajzolni,
+    \item egy programozói felületet adni, amivel egyszerű rajzolni és
+    \item ehhez szükséges adatokat és állapotokat tárolni.
+\end{itemize}
+Erre a három feladatra jutott egy-egy osztály.
+Ezt \aref{fig:overview-uml}. ábra szemlélteti.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+    \begin{umlpackage}{p-xcb-canvas}
+        \umlemptyclass[x=0,y=0]{canvas}
+        \umlemptyclass[x=0,y=-2]{canvas-rendering-context}
+        \umlemptyclass[x=-2,y=-5]{path-t}
+        \umlemptyclass[x=2,y=-5]{xcbcanvas-font-t}
+        \umlemptyclass[x=0,y=-7]{xcb-canvas}
+    \end{umlpackage}
+    \umlemptypackage[y=-10]{xcb}
+    \umlVHimport[anchors=-125 and west,arm1=-1cm,arm2=-1cm]{p-xcb-canvas}{xcb}
+    \umlunicompo[anchors=-157 and north]{canvas-rendering-context}{path-t}
+    \umlunicompo[anchors=-23 and north]{canvas-rendering-context}{xcbcanvas-font-t}
+    \umluniassoc[anchors=-110 and 110]{canvas-rendering-context}{xcb-canvas}
+    \umldep{canvas}{canvas-rendering-context}
+\end{tikzpicture}
+\caption{Áttekintő UML az osztályokról}
+\label{fig:overview-uml}
+\end{figure}
+
+\Section{Képernyőre rajzolás}
+
+Az XCB keretrendszerrel való kommunikációt absztrahálja, és az ahhoz szükséges globális változókat tárolja. Ez pontosabban az X-szerverrel való kapcsolatot, az ablakunk ID-jét és a X-nek fontos grafikai állapotokat tartalmazó struktúrát jelenti. Kerültek továbbá ide függvények, ami XCB segítségével rajzol a képernyőre valamilyen primitívet (téglalap vagy ív), vagy az ablak egy tulajdonságát (például mérete vagy címe) módosítja. Emellett ide jutott az ablakot létrehozó kód is.
+Ezt \aref{fig:xcb-uml}. ábra szemlélteti.
+
+\Aref{fig:xcb-uml}. ábrán a plusz- és mínuszjel a láthatóságot jelzi, amely lehet publikus vagy privát. C-ben úgy kerül megvalósításra, hogy csak a forráskódban -- a header fájlban nem -- kerül definiálásra a struktúra \cite{c-oop}.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+    \begin{umlpackage}{p-xcb-canvas}
+        \umlclass[]{xcb-canvas}{
+        - connection : xcb\_connection \\ - screen : xcb\_screen \\ - window : xcb\_window \\ - gc : xcb\_gcontext
+        }
+        {
+        xcbcanvas\_init\_xcb(canvas : xcbcanvas) : void \\ xcbcanvas\_handle\_events(\\\ ctx : canvas\_rendering\_context,\\\  canvas : xcbcanvas,\\\ draw\_function : void(canvas\_rendering\_context)) \\ xcbcanvas\_load\_font(canvas : xcbcanvas, font\_name : string) \\ xcbcanvas\_set\_window\_title(canvas : xcbcanvas, title : string) \\ xcbcanvas\_set\_color(canvas : xcbcanvas, color : int) \\ xcbcanvas\_set\_stroke\_width(canvas : xcbcanvas, width : uint) \\ xcbcanvas\_stroke\_rectangle(canvas : xcbcanvas, x : int, y : int,\\width : uint, height : uint) \\ xcbcanvas\_draw\_text(canvas : xcbcanvas, x : int, y : int, text : string) \\ xcbcanvas\_line(canvas : xcbcanvas, x1 : int, y1 : int, x2 : int, y2 : int) \\ xcbcanvas\_arc(\\\ canvas : xcbcanvas, \\\ x : int, y : int, \\\ width : uint, height : uint, \\\ angle1 : int, angle2 : int) \\ xcbcanvas\_fill\_arc(\\\ canvas : xcbcanvas, \\\ x : int, y : int, \\\ width : uint, height : uint, \\\ angle1 : int, angle2 : int) \\ xcbcanvas\_draw\_path(canvas : xcbcanvas, path : path)
+        }
+    \end{umlpackage}
+\end{tikzpicture}
+\caption{XCB kezelő osztály UML ábrája}
+\label{fig:xcb-uml}
+\end{figure}
+
+\pagebreak
+
+\Section{Programozói felület}
+
+A felhasználó által használható metódusok és függvények ebben az osztályban kaptak helyet. Ezek a függvények követik a Canvas API szignatúráját azzal a különbséggel, hogy az ablakra rajzoláshoz extra információt tartalmazó osztályt is átadjuk a függvényeknek.
+
+Előfordul, hogy egy névvel több szignatúrájú függvény van definiálva JS-ben, bár ez nem lenne probléma C++-ban, C-ben az. A probléma egyszerűen orvosolható a függvény nevének a módosításával, például az argumentumok számának változtatásával. Az OpenGL hasonló megoldást ad a problémára. 
+
+A \texttt{canvas} struktúrához tartozó függvényeket \aref{fig:canvas-uml}. ábra szemlélteti.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+    \begin{umlpackage}{p-xcb-canvas}
+        \umlclass[]{canvas}{}{
+        canvas\_dealloc(rendering\_context) \\
+        canvas\_set\_draw\_function(rendering\_context, draw\_function) \\
+        canvas\_stroke\_rectangle(rendering\_context, x, y, width, height) \\
+        canvas\_fill\_rectangle(rendering\_context, x, y, width, height) \\
+        canvas\_clear\_rectangle(rendering\_context, x, y, width, height) \\
+        canvas\_fill\_text(rendering\_context, text, x, y) \\
+        canvas\_font4(rendering\_context, family, size, weight, italic) \\
+        canvas\_font2(rendering\_context, family, size) \\
+        canvas\_set\_line\_width(rendering\_context, width) \\
+        canvas\_begin\_path(rendering\_context) \\
+        canvas\_move\_to(rendering\_context, x, y) \\
+        canvas\_line\_to(rendering\_context, x, y) \\
+        canvas\_arc(rendering\_context, x, y, radius, start\_angle, end\_angle) \\
+        canvas\_close\_path(rendering\_context) \\
+        canvas\_stroke(rendering\_context) \\
+        canvas\_fill(rendering\_context)
+        }
+    \end{umlpackage}
+    \end{tikzpicture}
+    \caption{Felhasználó felőli osztályok UML ábrája}
+    \label{fig:canvas-uml}
+\end{figure}
+
+\Section{Az állapotok kezelése}
+
+A különböző állapotok kezeléséhez szükséges adatok, metódusok és függvények osztálya a \texttt{canvas\_rendering\_context}.
+A különböző állapotok, amelyeket a keretrendszer kezel az a
+\begin{itemize}
+    \item betűtípus címe, mérete, kövérsége, dőlése, és
+    \item \texttt{Path}-hez kiadott utasítások.
+\end{itemize}
+A betűtípust kétféle függvénnyel lehet módosítani a \texttt{canvas} osztályból, majd a beállított betűtípus kerül felhasználásra szöveg kirajzolásakor.
+A \texttt{Path}-be sorként kerülnek az utasítások bele \texttt{sub\_path}-ba, ami dinamikus tömbként van megoldva.
+Továbbá tárolásra kerül a tömb mérete, és hogy az alakzat kitöltött-e, vagy csak körvonal.
+
+A \texttt{canvas\_rendering\_context} struktúra elemeit, és a hozzá tartozó függvényeket \aref{fig:data-uml}. ábra szemlélteti.
+
+% TODO Összehasonlitani XCB és Canvas hivasokat
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+    \begin{umlpackage}{p-xcb-canvas}
+        \umlclass{canvas\_rendering\_context}{
+        - canvas : xcb-canvas \\ + fill\_color : uint \\ + stroke\_color : uint \\ + path : path \\ + font : xcbcanvas\_font
+        }{
+        create\_canvas\_rendering\_context(\\\ draw\_function : void()) \\\ : canvas\_rendering\_context \\ ctx\_update\_font(\\\ rendering\_context : canvas\_rendering\_context, \\\ font : xcbcanvas\_font) \\\ : void
+        }
+        \umlclass[x=-3,y=-7]{xcbcanvas\_font}{
+        + family : string \\+ size : uint \\ + weight : string \\ + italic : bool
+        }{}
+        \umlclass[x=2,y=-7]{path}{
+        + sub\_paths : sub\_path[] \\ + count : int \\ + filled : bool
+        }{}
+    \end{umlpackage}
+    \end{tikzpicture}
+    \caption{Adatok kezeléséhez szükséges osztályok UML ábrája}
+    \label{fig:data-uml}
+\end{figure}
+
+\Section{XCB és Canvas hívások összehasonlítása}
+
+Az alábbi \ref{tab:compare}. táblázat összehasonlít néhány függvényt XCB és Canvas között ugyanarra a problémára. A táblázatból hamar feltünik, hogy át kell adni az állapotokat tároló változókat és az XCB-nek struktúraként kell átadni a színt és vastagságot. Valójában itt egy hívással tudnánk ezeket és többet változtatni egyszerre és a változtatások értékeit kell egy tömbbe rakni. Az értékek sorrendje adott. A \texttt{rectangle} struktúrája egy \textit{x}, \textit{y}, \textit{szélesség} és \textit{magasság}ból áll. A \texttt{points} pedig egy pontokból álló tömb, ahol a pont egy \textit{x} és \textit{y}-ból álló struktúra. A szöveg kiírásánál alacsony szintű programozás miatt a szöveg hosszát is át kell adni.
+
+% TODO: Bővíteni, részletezni
+\begin{table}[h!]
+    \centering
+    \caption{Függvények összehasonlítása}
+    \label{tab:compare}
+    \medskip
+    \begin{tabular}{|l|l|l|} \hline
+\textbf{Függvény} & \textbf{XCB} & \textbf{Canvas} \\ \hline
+\begin{tabular}[c]{@{}l@{}}Szín\\ változtatása\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{xcb\_change\_gc(}\\ \texttt{c, gc,}\\ \texttt{XCB\_GC\_FOREGROUND,}\\ \texttt{\&color});\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{ctx.strokeStyle =}\\ \texttt{"\#FF0000";}\end{tabular} \\ \hline
+\begin{tabular}[c]{@{}l@{}}Vonalvastagság\\ változtatása\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{xcb\_change\_gc(}\\ \texttt{c, gc,}\\ \texttt{XCB\_GC\_LINE\_WIDTH,}\\ \texttt{\&width);}\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{ctx.lineWidth =}\\ \texttt{20;}\end{tabular} \\ \hline
+\begin{tabular}[c]{@{}l@{}}Kitöltött\\ téglalap\\ kirajzolása\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{xcb\_poly\_fill\_rectangle(}\\ \texttt{c, canvas-\textgreater{}window, gc, 1,}\\ \texttt{\&rectangle);}\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{ctx.fillRect(0, 0,}\\ \texttt{100, 100);}\end{tabular} \\ \hline
+Vonal rajzolása & \begin{tabular}[c]{@{}l@{}}\texttt{xcb\_poly\_line(}\\ \texttt{c,}\\ \texttt{XCB\_COORD\_MODE\_ORIGIN,}\\ \texttt{canvas-\textgreater{}window, gc, 2, points);}\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{ctx.lineTo(300,}\\ \texttt{200);}\end{tabular} \\ \hline
+Szöveg kiírása & \begin{tabular}[c]{@{}l@{}}\texttt{xcb\_image\_text\_8\_checked(}\\\texttt{canvas-\textgreater{}connection, strlen(text),}\\\texttt{canvas-\textgreater{}window,canvas-\textgreater{}gc,}\\\texttt{x,y,text);}\end{tabular} & \begin{tabular}[c]{@{}l@{}}\texttt{ctx.fillText(}\\\texttt{"Hello World",}\\\texttt{500, 200);}\end{tabular} \\ \hline
+\end{tabular}
+\end{table}

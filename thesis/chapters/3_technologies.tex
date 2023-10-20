@@ -1,0 +1,56 @@
+\Chapter{Használt technológiák}
+
+\Section{HTML5 Canvas API leírása}
+
+A HTML5 Canvas egy olyan böngészőben használt JavaScript API, amelynek segítségével könnyen lehet rajzolni a weblapon elhelyezett \texttt{<canvas>} elemre. Használják animációkra, böngészős játékokra, adatábrázolásra, képszerkesztésre, és valós-idejű videó feldolgozásra \cite{canvasapi}.
+
+A Canvas API 2D-s rajzolással foglalkozik, ahol vonalakat, íveket, görbéket, és alakzatokat lehet könnyen rajzolni és animálni.
+Emellett használható vele a WebGL API, ami hardveresen gyorsított 2D és 3D-s grafikát rajzol. Ez az OpenGL ES 2.0-ból származik \cite{webgl}.
+
+Alább egy egyszerű zöld téglalap rajzolását mutatom be Canvas API-val.
+
+\begin{minted}{javascript}
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+ctx.fillStyle = 'green';
+ctx.fillRect(10, 10, 150, 100);
+\end{minted}
+
+\Section{Megjelenítés UNIX rendszereken}
+
+Az UNIX rendszeren való megjelenítésre az X11 és a Wayland protokoll használható. Ezek közül Wayland viszont még nem terjedt el széleskörben \cite{waylandsupport}.
+
+Így X11 protokollnál maradva, Xlib és XCB függvénykönyvtár közül az utóbbit választottam a kisebb mérete és egyszerűsége miatt \cite{xcb}.
+Az XCB-vel egyenesen a megjelenítő szerverrel beszélhetünk, megkerülve nagyobb grafikus könyvtárakat, mint GTK, Qt, vagy akár OpenGL. Ugyanakkor a hátrány is ez, hiszen a rajzolási lehetőségeink alapvetően minimális ezek segítsége nélkül. Említésre méltó így, hogy a WebGL API része a Canvas API-nak nem fogom a szakdolgozaton belül tervezni vagy implementálni.
+
+\Section{JavaScript és C programozási nyelv}
+
+Egy JavaScriptben (JS) írt API-t tervezek áthelyezni C-be. Így érdemes az összehasonlításuk:
+\begin{itemize}
+    \item JS gyengén típusos, a C erősen típusos
+    \item JS futtáskor értelmezett nyelv, C fordított nyelv
+    \item JS objektum-orientált (OOP), imperatív vagy akár funkcionális, C csak imperatív
+\end{itemize}
+
+Az utóbbi összehasonlítási pont fontos, mert a Canvas API OOP módon lett írva. Ez azt jelenti, hogy C-ben több kódot kell írnunk azért, hogy OOP módszertant használjuk \cite{c-oop}.
+
+\Section{Cmocka egységtesztelő keretrendszer}
+
+A cmocka egy elegáns egységtesztelő keretrendszer C nyelvhez, amely támogatja a mock objektumokat \cite{cmocka}. Csak a szabványos C könyvtárat igényli, így tökéletes a létrehozandó keretrendszerhez. Az egységtesztelés az a folyamat, amikor a forráskód egységeit elkülönítve, de teljes adatokkal (automatikusan) teszteljük.
+
+\Section{Git verziókezelő rendszer és Github kódtárhely}
+
+A git egy verziókezelő rendszer, amely összehasonlítja a jelenlegi kódot az előző verzióval és a különbséget elmenti egyéb metaadatokkal (például ki és mikor írta), így egyszerűsítve a revizionálást, vagy a közreműködést \cite{git}.
+
+\Section{Windows Subsystem for Linux}
+
+A Windows Subsystem for Linux (WSL) az egy kompatibilitási réteg, ami UNIX rendszerre írt kód futtatását teszi lehetővé Windows rendszereken. Ez a technológia szükséges a Windowson való fejlesztéshez és használathoz \cite{wsl}. Windows 10-en önállóan viszont nem elég grafikus programok futtatásához.
+
+\Section{VcXsrv}
+
+VcXsrv az egy X szerver Windows 10-hez, ami WSL-el együtt működve X11 grafikus alkalmazások futtatását teszi lehetővé Windows 10-en. Ez a technológia is szükséges a Windowson való fejlesztéshez és használathoz \cite{vcxsrv}.
+
+\Section{Github Copilot}
+
+A GitHub Copilot több milliárd sor nyilvános kódon alapuló mesterséges intelligencia, ami kódot tud generálni a megírt kód alapján vagy akár kommentekből is \cite{github-copilot}. A használatával fel tudom gyorsítani a hasonló kódok írását.
