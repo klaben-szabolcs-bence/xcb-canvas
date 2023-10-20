@@ -115,6 +115,17 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
     return -1;
   }
 
+  xcb_void_cookie_t cookie = xcb_change_property_checked(c,
+    XCB_PROP_MODE_REPLACE, win, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+    strlen("XCB Canvas"), "XCB Canvas");
+  xcb_generic_error_t* error = xcb_request_check(c, cookie);
+  if (error)
+  {
+    fprintf(stderr, "Error changing window title: %d\n", error->error_code);
+    free(error);
+    return;
+  }
+
   /* Map the window on the screen */
   xcb_map_window(c, win);
 

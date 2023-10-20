@@ -12,7 +12,7 @@ example: lib
 tests: clean canvas.o xcb-canvas.o tests.o
 	$(CC) $(STD) $(INCLUDE) -Wall -g tests/* \
 	$(OUTPUT_FOLDER)/canvas.o $(OUTPUT_FOLDER)/xcb-canvas.o $(OUTPUT_FOLDER)/tests.o \
-	-o $(OUTPUT_FOLDER)/tests `$(PKG_CONF) xcb cmocka` $(WRAP) && \
+	-o $(OUTPUT_FOLDER)/tests `$(PKG_CONF) xcb x11 cmocka` $(WRAP) && \
 	./$(OUTPUT_FOLDER)/tests
 
 lib: tests clean xcb-canvas.o canvas.o
@@ -23,7 +23,7 @@ tests.o:
 	$(CC) $(STD) $(INCLUDE) -Wall -g -c src/tests.c -o $(OUTPUT_FOLDER)/tests.o `$(PKG_CONF) cmocka` $(WRAP)
 
 xcb-canvas.o:
-	$(CC) $(STD) $(INCLUDE) -Wall -g -c src/xcb-canvas.c -o $(OUTPUT_FOLDER)/xcb-canvas.o `$(PKG_CONF) xcb`
+	$(CC) $(STD) $(INCLUDE) -Wall -g -c src/xcb-canvas.c -o $(OUTPUT_FOLDER)/xcb-canvas.o `$(PKG_CONF) xcb x11`
 
 canvas.o:
 	$(CC) $(STD) $(INCLUDE) -Wall -g -c src/canvas.c -o $(OUTPUT_FOLDER)/canvas.o
