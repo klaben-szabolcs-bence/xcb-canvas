@@ -1,10 +1,9 @@
 CC:=gcc
 OUTPUT_FOLDER:=bin
 
-all:
-	@mkdir $(OUTPUT_FODLER)
-	$(CC) -Wall src/main.c -o main `pkg-config --cflags --libs xcb`
+all: clean
+	@mkdir $(OUTPUT_FOLDER)
+	$(CC) -Iinclude/ -Wall src/main.c -o $(OUTPUT_FOLDER)/main `pkg-config --cflags --libs xcb`
 
 clean:
-	rm $(OUTPUT_FODLER)/*
-	rmdir $(OUTPUT_FODLER)
+	rm -rf $(OUTPUT_FOLDER)
