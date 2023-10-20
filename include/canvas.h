@@ -57,4 +57,28 @@ void canvas_draw_text(
 );
 
 
+/**
+ * @brief Sets the color of the rendering context.
+ * 
+ * @param rendering_context The rendering context to use.
+ * @param red               The red component of the color.
+ * @param green             The green component of the color.
+ * @param blue              The blue component of the color.
+ */
+void canvas_set_color(
+    canvas_rendering_context_t* rendering_context,
+    uint8_t red, uint8_t green, uint8_t blue
+);
+
+/**
+ * @brief Sets the width of outlines drawn on the canvas.
+ * 
+ * @param rendering_context The rendering context to use.
+ * @param width             The width of the outlines.
+ */
+void canvas_set_line_width(
+    canvas_rendering_context_t* rendering_context,
+    uint16_t width
+);
+
 #endif /* CANVAS_H */

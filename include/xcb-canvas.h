@@ -45,7 +45,7 @@ void xcbcanvas_handle_events(canvas_rendering_context_t* rendering_context);
 xcb_gc_t gc_font_get(canvas_rendering_context_t* rendering_context, char* font_name);
 
 /* Set the color used for drawing */
-void xcbcanvas_set_fill_color(canvas_rendering_context_t* rendering_context, uint32_t color);
+void xcbcanvas_set_color(canvas_rendering_context_t* rendering_context, uint32_t color);
 
 /* Set the line width used for drawing */
 void xcbcanvas_set_stroke_width(canvas_rendering_context_t* rendering_context, int width);
