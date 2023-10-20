@@ -10,3 +10,5 @@ For testing, [cmocka](https://cmocka.org/) is used. Please make sure it is insta
 
 Windows: [Use VS Code with WSL2](https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-vscode) and run the above mentioned lines for Linux.
 If GUI programs don't show up, see [VcSRsv](https://sourceforge.net/projects/vcxsrv/) and this [SO answer](https://stackoverflow.com/a/61110604).
+
+You can view the thesis online [on Overleaf](https://www.overleaf.com/read/sgvnrrmzgqzy).
