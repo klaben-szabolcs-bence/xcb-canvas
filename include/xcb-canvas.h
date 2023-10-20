@@ -12,21 +12,25 @@ typedef struct canvas_size_t {
 } canvas_size_t;
 
 typedef struct canvas_rendering_context_t {
-    xcb_window_t win;
     xcb_connection_t *c;
+    xcb_window_t win;
+    xcb_gcontext_t foreground;
+    xcb_gcontext_t background;
+    void* draw_function;
 } canvas_rendering_context_t;
 
 
 /* Prints pressed modifier keys */
-void print_modifiers (uint32_t mask);
+void xcbcanvas_print_modifiers (uint32_t mask);
 
 /* Program entry-point, when executed */
-int init_xcb (canvas_rendering_context_t* rendering_context);
+int xcbcanvas_init_xcb (canvas_rendering_context_t* rendering_context);
 
 /* Get/Set the RenderingContext's properties */
-void set_window_size (canvas_rendering_context_t* rendering_context, int new_width, int new_height);
-canvas_size_t get_windows_size(canvas_rendering_context_t* rendering_context);
+void xcbvanvas_set_window_size (canvas_rendering_context_t* rendering_context, int new_width, int new_height);
+canvas_size_t xcbcanvas_get_windows_size(canvas_rendering_context_t* rendering_context);
+void xcbcanvas_set_draw_function (canvas_rendering_context_t* rendering_context, void* draw_function);
 
 /* Handle the event loop of the main program */
-void handle_events (xcb_connection_t *c);
+void xcbcanvas_handle_events (canvas_rendering_context_t* rendering_context);
 #endif /* XCB_CANVAS_H */

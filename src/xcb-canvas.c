@@ -1,6 +1,6 @@
 #include "xcb-canvas.h"
 
-void print_modifiers (uint32_t mask)
+void xcbcanvas_print_modifiers (uint32_t mask)
 {
   const char **mod, *mods[] = {
     "Shift", "Lock", "Ctrl", "Alt",
@@ -14,11 +14,13 @@ void print_modifiers (uint32_t mask)
   putchar ('\n');
 }
 
-int init_xcb (canvas_rendering_context_t* rendering_context)
+int xcbcanvas_init_xcb (canvas_rendering_context_t* rendering_context)
 {
   xcb_connection_t    *c;
   xcb_screen_t        *screen;
   xcb_window_t         win;
+  xcb_gcontext_t       foreground;
+  xcb_gcontext_t       background;
   uint32_t             mask = 0;
   uint32_t             values[2];
 
@@ -27,6 +29,18 @@ int init_xcb (canvas_rendering_context_t* rendering_context)
 
   /* Get the first screen */
   screen = xcb_setup_roots_iterator (xcb_get_setup (c)).data;
+
+  /* Create black (foreground) and white (background) colors */
+  foreground = xcb_generate_id (c);
+  mask = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES;
+  values[0] = screen->black_pixel;
+  values[1] = 0;
+  xcb_create_gc (c, foreground, screen->root, mask, values);
+  background = xcb_generate_id (c);
+  mask = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES;
+  values[0] = screen->white_pixel;
+  values[1] = 0;
+  xcb_create_gc (c, background, screen->root, mask, values);
 
   /* Ask for our window's Id */
   win = xcb_generate_id (c);
@@ -54,24 +68,28 @@ int init_xcb (canvas_rendering_context_t* rendering_context)
 
   xcb_flush (c);
 
-  handle_events (c);
+  xcbcanvas_handle_events (rendering_context);
 
   rendering_context->win = win;
   rendering_context->c = c;
+  rendering_context->foreground = foreground;
+  rendering_context->background = background;
 
   return 0;
 }
 
-void handle_events (xcb_connection_t *c)
+void xcbcanvas_handle_events (canvas_rendering_context_t* rendering_context)
 {
+  xcb_connection_t *c = rendering_context->c;
   xcb_generic_event_t *e;
   while ((e = xcb_wait_for_event (c))) {
     switch (e->response_type & ~0x80) {
     case XCB_EXPOSE: {
       xcb_expose_event_t *ev = (xcb_expose_event_t *)e;
-
-     /* printf ("Window %u exposed. Region to be redrawn at location (%d,%d), with dimension (%d,%d)\n", 
+      rendering_context->draw_function;
+      /* printf ("Window %u exposed. Region to be redrawn at location (%d,%d), with dimension (%d,%d)\n", 
               ev->window, ev->x, ev->y, ev->width, ev->height); */
+      xcb_flush(c);
       break;
     }
     case XCB_BUTTON_PRESS: {
@@ -149,7 +167,7 @@ void handle_events (xcb_connection_t *c)
   }
 }
 
-void set_window_size(canvas_rendering_context_t* rendering_context, int new_width, int new_height)
+void xcbcanvas_set_window_size(canvas_rendering_context_t* rendering_context, int new_width, int new_height)
 {
     static uint32_t values[2];
     values[0] = new_width;
@@ -158,7 +176,7 @@ void set_window_size(canvas_rendering_context_t* rendering_context, int new_widt
             XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
 }
 
-canvas_size_t get_windows_size(canvas_rendering_context_t* rendering_context)
+canvas_size_t xcbcanvas_get_windows_size(canvas_rendering_context_t* rendering_context)
 {
     xcb_get_geometry_cookie_t cookie = xcb_get_geometry(rendering_context->c, rendering_context->win);
     xcb_get_geometry_reply_t *reply = xcb_get_geometry_reply(rendering_context->c, cookie, NULL);
@@ -167,4 +185,9 @@ canvas_size_t get_windows_size(canvas_rendering_context_t* rendering_context)
     size.height = reply->height;
     free(reply);
     return size;
+}
+
+void xcbcanvas_set_draw_function (canvas_rendering_context_t* rendering_context, void* draw_function)
+{
+    rendering_context->draw_function = draw_function;
 }
