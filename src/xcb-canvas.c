@@ -26,8 +26,20 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   /* Open the connection to the X server */
   c = xcb_connect(NULL, NULL);
 
+  if (xcb_connection_has_error(c))
+    {
+      printf("Error: Can't open display: %s\n", xcb_get_error_text(c, xcb_connection_has_error(c)));
+      return -1;
+    }
+
   /* Get the first screen */
   screen = xcb_setup_roots_iterator(xcb_get_setup(c)).data;
+
+  if (screen == NULL)
+    {
+      printf("Error: Can't get screen\n");
+      return -1;
+    }
 
   /* Create black (foreground) and white (background) colors */
   foreground = xcb_generate_id(c);
@@ -44,6 +56,12 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
   /* Ask for our window's Id */
   win = xcb_generate_id(c);
 
+  if (win == 0)
+    {
+      printf("Error: Can't get window id\n");
+      return -1;
+    }
+
   /* Create the window */
   mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
   values[0] = screen->white_pixel;
@@ -51,7 +69,7 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
     XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION |
     XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW |
     XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
-  xcb_create_window(c,                             /* Connection          */
+  xcb_create_window(c,             /* Connection          */
     0,                             /* depth               */
     win,                           /* window Id           */
     screen->root,                  /* parent window       */
@@ -62,18 +80,30 @@ int xcbcanvas_init_xcb(canvas_rendering_context_t* rendering_context)
     screen->root_visual,           /* visual              */
     mask, values);                 /* masks */
 
-/* Map the window on the screen */
+  if (xcb_connection_has_error(c))
+    {
+      printf("Error: Can't create window: %s\n", xcb_get_error_text(c, xcb_connection_has_error(c)));
+      return -1;
+    }
+  
+  /* Map the window on the screen */
   xcb_map_window(c, win);
 
-  xcb_flush(c);
+  if (xcb_connection_has_error(c))
+    {
+      printf("Error: Can't map window: %s\n", xcb_get_error_text(c, xcb_connection_has_error(c)));
+      return -1;
+    }
 
-  xcbcanvas_handle_events(rendering_context);
+  xcb_flush(c);
 
   rendering_context->win = win;
   rendering_context->c = c;
   rendering_context->screen = screen;
   rendering_context->foreground = foreground;
   rendering_context->background = background;
+
+  xcbcanvas_handle_events(rendering_context);
 
   return 0;
 }
