@@ -11,10 +11,10 @@ lib: clean xcb-canvas.o canvas.o
 	ar rcs lib-xcb-canvas.a xcb-canvas.o canvas.o
 
 xcb-canvas.o: 
-	$(CC) $(STD) $(INCLUDE) -Wall -c src/xcb-canvas.c -o $(OUTPUT_FOLDER)/xcb-canvas.o `pkg-config --cflags --libs xcb`
+	$(CC) $(STD) $(INCLUDE) -Wall -g -c src/xcb-canvas.c -o $(OUTPUT_FOLDER)/xcb-canvas.o `pkg-config --cflags --libs xcb`
 
 canvas.o:
-	$(CC) $(STD) $(INCLUDE) -Wall -c src/canvas.c -o $(OUTPUT_FOLDER)/canvas.o
+	$(CC) $(STD) $(INCLUDE) -Wall -g -c src/canvas.c -o $(OUTPUT_FOLDER)/canvas.o
 
 clean:
 	rm -rf $(OUTPUT_FOLDER)
