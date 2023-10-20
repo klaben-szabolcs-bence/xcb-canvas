@@ -3,12 +3,10 @@
 
 #include "canvas.h"
 
-canvas_rendering_context_t rendering_context;
-
 /* Main entry point to the program */
 int main();
 
 /* Draw loop of the program */
-void draw();
+void draw(canvas_rendering_context_t* rendering_context);
 
 #endif /* EXAMPLE_H */

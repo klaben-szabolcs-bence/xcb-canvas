@@ -26,26 +26,12 @@ struct sub_path_t {
 };
 #endif /* CANVAS_PATH_TYPES */
 
-int canvas_init(canvas_rendering_context_t* rendering_context)
-{
-    int rc = xcbcanvas_init_xcb(rendering_context);
-    if (rc != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
 void canvas_dealloc(canvas_rendering_context_t* rendering_context)
 {
     free(rendering_context->canvas);
     free(rendering_context->path);
     free(rendering_context->font);
-}
-
-void canvas_set_draw_function(canvas_rendering_context_t* rendering_context, void (*draw_function)())
-{
-    rendering_context->draw_function = draw_function;
+    free(rendering_context);
 }
 
 void canvas_stroke_rectangle(
@@ -54,7 +40,7 @@ void canvas_stroke_rectangle(
     uint16_t width, uint16_t height
 )
 {
-    xcbcanvas_stroke_rectangle(rendering_context, x, y, width, height);
+    xcbcanvas_stroke_rectangle(rendering_context->canvas, x, y, width, height);
 }
 
 void canvas_fill_rectangle(
@@ -63,7 +49,7 @@ void canvas_fill_rectangle(
     uint16_t width, uint16_t height
 )
 {
-    xcbcanvas_fill_rectangle(rendering_context, x, y, width, height);
+    xcbcanvas_fill_rectangle(rendering_context->canvas, x, y, width, height);
 }
 
 void canvas_clear_rectangle(
@@ -73,9 +59,9 @@ void canvas_clear_rectangle(
 )
 {
     uint32_t stack_color = rendering_context->strokeColor;
-    xcbcanvas_set_color(rendering_context, 0);
-    xcbcanvas_fill_rectangle(rendering_context, x, y, width, height);
-    xcbcanvas_set_color(rendering_context, stack_color);
+    xcbcanvas_set_color(rendering_context->canvas, 0);
+    xcbcanvas_fill_rectangle(rendering_context->canvas, x, y, width, height);
+    xcbcanvas_set_color(rendering_context->canvas, stack_color);
 }
 
 void canvas_fill_text(
@@ -84,7 +70,7 @@ void canvas_fill_text(
     int16_t x, int16_t y
 )
 {
-    xcbcanvas_draw_text(rendering_context, x, y, text);
+    xcbcanvas_draw_text(rendering_context->canvas, x, y, text);
 }
 
 void canvas_font4(
@@ -100,7 +86,7 @@ void canvas_font4(
     font.size = size;
     font.weight = weight;
     font.italic = italic;
-    xcbcanvas_update_font(rendering_context, &font);
+    ctx_update_font(rendering_context, font);
 }
 
 void canvas_font2(
@@ -118,7 +104,7 @@ void canvas_set_color(
 )
 {
     uint32_t color = (red << 16) | (green << 8) | blue;
-    xcbcanvas_set_color(rendering_context, color);
+    xcbcanvas_set_color(rendering_context->canvas, color);
 }
 
 void canvas_set_line_width(
@@ -126,7 +112,7 @@ void canvas_set_line_width(
     uint16_t width
 )
 {
-    xcbcanvas_set_stroke_width(rendering_context, width);
+    xcbcanvas_set_stroke_width(rendering_context->canvas, width);
 }
 
 void canvas_begin_path(
@@ -239,7 +225,7 @@ void canvas_stroke(
     canvas_rendering_context_t* rendering_context
 )
 {
-    xcbcanvas_draw_path(rendering_context);
+    xcbcanvas_draw_path(rendering_context->canvas, rendering_context->path);
 }
 
 void canvas_fill(
@@ -248,5 +234,5 @@ void canvas_fill(
 {
     rendering_context->path->filled = 1;
     canvas_close_path(rendering_context);
-    xcbcanvas_draw_path(rendering_context);
+    xcbcanvas_draw_path(rendering_context->canvas, rendering_context->path);
 }
