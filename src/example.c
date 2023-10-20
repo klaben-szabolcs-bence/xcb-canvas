@@ -1,8 +1,9 @@
 #include "example.h"
 
-int main ()
+int main()
 {
     canvas_init(&rendering_context);
+    xcbcanvas_set_draw_function(&rendering_context, draw);
 }
 
 void draw()
