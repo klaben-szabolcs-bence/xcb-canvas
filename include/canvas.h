@@ -7,7 +7,7 @@
  * @brief Initializes the canvas.
  *
  * @param rendering_context The rendering context to use.
- * @return -1 on failure.
+ * @return -1 on failure, 0 on success.
 */
 int canvas_init(canvas_rendering_context_t* rendering_context);
 
