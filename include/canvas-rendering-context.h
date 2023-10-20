@@ -22,7 +22,7 @@ struct canvas_rendering_context_t {
  *
  * @returns A canvas.
  */
-canvas_rendering_context_t* create_canvas_rendering_context(void (*draw_function) ());
+canvas_rendering_context_t* create_canvas_rendering_context(void (*draw_function) (canvas_rendering_context_t* rendering_context));
 
 /**
  * @brief Updates the font of the canvas.

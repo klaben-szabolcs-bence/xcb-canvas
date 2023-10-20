@@ -1,6 +1,6 @@
 #include "canvas-rendering-context.h"
 
-canvas_rendering_context_t* create_canvas_rendering_context(void (*draw_function) ()) {
+canvas_rendering_context_t* create_canvas_rendering_context(void (*draw_function) (canvas_rendering_context_t* rendering_context)) {
 
     canvas_rendering_context_t* ctx = malloc(sizeof(canvas_rendering_context_t));
 
