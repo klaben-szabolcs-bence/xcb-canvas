@@ -42,8 +42,8 @@ int init_xcb ()
                      0,                             /* depth               */
                      win,                           /* window Id           */
                      screen->root,                  /* parent window       */
-                     0, 0,                          /* x, y                */
-                     150, 150,                      /* width, height       */
+                     10, 10,                        /* x, y                */
+                     800, 600,                      /* width, height       */
                      10,                            /* border_width        */
                      XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class               */
                      screen->root_visual,           /* visual              */
@@ -55,6 +55,12 @@ int init_xcb ()
   xcb_flush (c);
 
   handle_events (c);
+
+  rendering_context.width = 800;
+  rendering_context.height = 600;
+  rendering_context.win = win;
+  rendering_context.c = c;
+
   return 0;
 }
 
@@ -142,4 +148,15 @@ void handle_events (xcb_connection_t *c)
     /* Free the Generic Event */
     free (e);
   }
+}
+
+void set_window_size(RenderingContext* rendering_context, int new_width, int new_height)
+{
+    static uint32_t values[2];
+    values[0] = new_width;
+    values[1] = new_height;
+    xcb_configure_window ( rendering_context->c, rendering_context->win,
+            XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
+    rendering_context->width = new_width;
+    rendering_context->height = new_height;
 }
