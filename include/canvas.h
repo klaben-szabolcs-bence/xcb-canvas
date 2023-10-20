@@ -3,6 +3,8 @@
 
 #include "xcb-canvas.h"
 
+// TODO: Implement drawing text
+
 /**
  * @brief Initializes the canvas.
  *
@@ -33,10 +35,26 @@ void canvas_stroke_rectangle(
  *
  * @param rendering_context    The rendering context used.
  * @param x                    Top left y coordinate of the rectangle.
+ * @param y                    Top left x coordinate of the rectangle.
  * @param width                Width of the rectangle.
  * @param height               Height of the rectangle.
 */
 void canvas_fill_rectangle(
+    canvas_rendering_context_t* rendering_context,
+    int16_t x, int16_t y,
+    uint16_t width, uint16_t height
+);
+
+/**
+ * @brief Draws a rectangle in white.
+ * 
+ * @param rendering_context     The rendering context used.
+ * @param x                     Top left x coordinate of the rectangle.
+ * @param y                     Top left y coordinate of the rectangle.
+ * @param width                 Width of the rectangle.
+ * @param height                Height of the rectangle.
+ */
+void canvas_clear_rectangle(
     canvas_rendering_context_t* rendering_context,
     int16_t x, int16_t y,
     uint16_t width, uint16_t height

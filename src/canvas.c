@@ -1,7 +1,5 @@
 #include "canvas.h"
 
-// TODO: Refactor xcb calls from this file to use xcb-canvas.h methods.
-
 int canvas_init(canvas_rendering_context_t* rendering_context)
 {
     int rc = xcbcanvas_init_xcb(rendering_context);
@@ -30,13 +28,25 @@ void canvas_fill_rectangle(
     xcbcanvas_fill_rectangle(rendering_context, x, y, width, height);
 }
 
+void canvas_clear_rectangle(
+    canvas_rendering_context_t* rendering_context,
+    int16_t x, int16_t y,
+    uint16_t width, uint16_t height
+)
+{
+    uint32_t stack_color = rendering_context->strokeColor;
+    xcbcanvas_set_color(rendering_context, 0);
+    xcbcanvas_fill_rectangle(rendering_context, x, y, width, height);
+    xcbcanvas_set_color(rendering_context, stack_color);
+}
+
 void canvas_draw_text(
     canvas_rendering_context_t* rendering_context,
     int16_t x, int16_t y,
     const char* text
 )
 {
-   xcbcanvas_draw_text(rendering_context, x, y, text);
+    xcbcanvas_draw_text(rendering_context, x, y, text);
 }
 
 void canvas_set_color(
